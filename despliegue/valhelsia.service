@@ -18,8 +18,7 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-WorkingDirectory=/opt/valhelsia6-server
-
+WorkingDirectory=/opt/minecraft-server/ejemplo-valhelsia
 # El perfil "tunel" levanta tambien el agente de playit.gg. Por defecto NO
 # sube: un VPS ya tiene IP publica y no lo necesita. Si lo quieres, anade
 # --profile tunel a las dos lineas de abajo.

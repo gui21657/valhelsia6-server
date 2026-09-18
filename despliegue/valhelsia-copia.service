@@ -9,8 +9,8 @@ After=docker.service
 
 [Service]
 Type=oneshot
-WorkingDirectory=/opt/valhelsia6-server
-ExecStart=/opt/valhelsia6-server/despliegue/copia-seguridad.sh
+WorkingDirectory=/opt/minecraft-server/ejemplo-valhelsia
+ExecStart=/opt/minecraft-server/despliegue/copia-seguridad.sh
 
 # Cuantas copias se conservan antes de empezar a borrar las viejas.
 Environment=COPIAS_A_CONSERVAR=7

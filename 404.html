@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pagina no encontrada</title>
+<meta name="description" content="Esa direccion no existe en el generador de servidores de Minecraft.">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="dark light">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Pagina no encontrada">
+<meta property="og:description" content="Esa direccion no existe en el generador de servidores de Minecraft.">
+<meta property="og:locale" content="es_ES">
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+
+<!--
+  Los estilos van aqui dentro en vez de en la hoja comun a proposito: GitHub
+  Pages sirve este archivo para CUALQUIER direccion que no exista, incluidas las
+  de subcarpetas, y una hoja enlazada con ruta relativa no cargaria desde ellas.
+  La pagina es pequena y asi siempre se ve bien.
+-->
+<style>
+  :root {
+    color-scheme: light dark;
+    --fondo: #f4f6f4; --alterno: #ffffff; --texto: #16201a; --suave: #4a5850;
+    --borde: #ccd6ce; --acento: #2f6f3e; --acento-texto: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fondo: #121614; --alterno: #1a201c; --texto: #e8eee9; --suave: #a6b3aa;
+      --borde: #2c352e; --acento: #6dc07f; --acento-texto: #08130c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--fondo); color: var(--texto);
+    font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+    line-height: 1.6; display: flex; flex-direction: column; min-height: 100vh;
+  }
+  .contenedor { width: min(100% - 2rem, 44rem); margin-inline: auto; }
+  main { flex: 1 0 auto; text-align: center; padding: 4rem 0 3rem; }
+  .marca {
+    display: flex; align-items: center; justify-content: center; gap: .6rem;
+    margin: 0 0 2rem; font-size: 1.15rem; font-weight: 700;
+  }
+  .marca svg { width: 1.7em; height: 1.7em; color: var(--acento); fill: none; }
+  h1 { font-size: clamp(1.6rem, 1.2rem + 2vw, 2.4rem); margin: 0 0 .6rem; line-height: 1.2; }
+  p { color: var(--suave); max-width: 52ch; margin: 0 auto 1.3rem; }
+  .boton {
+    display: inline-block; font-weight: 600; text-decoration: none;
+    background: var(--acento); color: var(--acento-texto);
+    border-radius: 6px; padding: .65rem 1.2rem; min-height: 2.75rem;
+  }
+  .boton:hover { filter: brightness(1.08); }
+  :focus-visible { outline: 3px solid var(--acento); outline-offset: 3px; border-radius: 6px; }
+  footer {
+    background: var(--alterno); border-top: 1px solid var(--borde);
+    padding: 1.5rem 0; font-size: .87rem;
+  }
+  footer p { margin: 0 auto; max-width: 72ch; text-align: center; }
+</style>
+</head>
+<body>
+
+<main class="contenedor">
+  <p class="marca">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M12 2.6 21.4 7v10L12 21.4 2.6 17V7L12 2.6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+      <path d="M2.6 7 12 11.6 21.4 7M12 11.6v9.8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+    </svg>
+    <span>Generador de servidores de Minecraft</span>
+  </p>
+
+  <h1>Esta direccion no existe</h1>
+  <p>
+    Puede que el enlace este mal escrito o que apunte a una pagina que ya no
+    esta. Todo el generador vive en una sola pagina, asi que desde la portada
+    llegas a todo.
+  </p>
+  <p><a class="boton" href="/">Ir a la portada</a></p>
+</main>
+
+<footer>
+  <div class="contenedor">
+    <p>
+      Minecraft es una marca registrada de Mojang Synergies AB y Microsoft.
+      Esta pagina no esta afiliada, patrocinada ni respaldada por ellos.
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>

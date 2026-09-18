@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Generador de servidores de Minecraft">
+  <rect width="64" height="64" rx="12" fill="#1b211c"/>
+  <g fill="none" stroke="#6dc07f" stroke-width="3.4" stroke-linejoin="round">
+    <path d="M32 11 52 20.5v23L32 53 12 43.5v-23L32 11Z"/>
+    <path d="M12 20.5 32 30l20-9.5M32 30v23"/>
+  </g>
+</svg>

@@ -16,8 +16,8 @@
 #
 set -euo pipefail
 
-REPO="${REPO:-https://github.com/gui21657/valhelsia6-server.git}"
-DESTINO="${DESTINO:-/opt/valhelsia6-server}"
+REPO="${REPO:-https://github.com/originservers/originservers.github.io.git}"
+DESTINO="${DESTINO:-/opt/minecraft-server}"
 PUERTO="${PUERTO:-25565}"
 
 msg()   { printf '\n[instalar] %s\n' "$*"; }
@@ -87,7 +87,7 @@ else
     msg "Clonando el repositorio en $DESTINO"
     git clone --depth 1 "$REPO" "$DESTINO"
 fi
-cd "$DESTINO"
+cd "$DESTINO/ejemplo-valhelsia"
 
 # --------------------------------------------------------------------------
 # 4. Configuracion
@@ -136,7 +136,7 @@ fi
 msg "Instalando las unidades de systemd"
 for unidad in valhelsia.service valhelsia-copia.service valhelsia-copia.timer; do
     # Si el repositorio se clono en otra ruta, se ajusta dentro de la unidad.
-    sed "s#/opt/valhelsia6-server#$DESTINO#g" "despliegue/$unidad" \
+    sed "s#/opt/minecraft-server#$DESTINO#g" "despliegue/$unidad" \
         > "/etc/systemd/system/$unidad"
 done
 systemctl daemon-reload
@@ -166,13 +166,13 @@ cat <<RESUMEN
     La primera vez descarga el modpack (797 MB) e instala Forge y ~250
     mods. Puede tardar media hora. Sigue el progreso con:
 
-        cd $DESTINO && docker compose logs -f
+        cd $DESTINO/ejemplo-valhelsia && docker compose logs -f
 
  Cuando veas 'Done (...)! For help, type "help"' esta listo.
 
  Para saber que direccion darle a tus amigos:
 
-        cd $DESTINO && ./direccion.sh
+        cd $DESTINO/ejemplo-valhelsia && ./direccion.sh
 
  SI ESTAS EN UN VPS EN LA NUBE: ademas del cortafuegos del sistema, el
  proveedor tiene el suyo propio y por defecto esta cerrado. Hay que abrir

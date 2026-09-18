@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generador de servidores de Minecraft</title>
+
+<meta name="description" content="Genera la configuracion completa de un servidor de Minecraft: docker-compose.yml, .env y comandos. Elige version, cargador de mods y mods desde Modrinth. No aloja ni ejecuta servidores.">
+<meta name="color-scheme" content="dark light">
+<meta name="author" content="gui21657">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Generador de servidores de Minecraft">
+<meta property="og:title" content="Generador de servidores de Minecraft">
+<meta property="og:description" content="Elige version, cargador y mods. La pagina te devuelve el docker-compose.yml, el .env y los comandos exactos. El servidor lo levantas tu.">
+<meta property="og:url" content="https://gui21657.github.io/generador-minecraft/">
+<meta property="og:image" content="https://gui21657.github.io/generador-minecraft/assets/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Generador de servidores de Minecraft">
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Generador de servidores de Minecraft">
+<meta name="twitter:description" content="Genera docker-compose.yml, .env y comandos para tu servidor de Minecraft. No aloja ni ejecuta nada.">
+<meta name="twitter:image" content="https://gui21657.github.io/generador-minecraft/assets/img/og.png">
+
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://gui21657.github.io/generador-minecraft/">
+<link rel="stylesheet" href="assets/css/estilos.css">
+</head>
+<body>
+
+<a class="saltar-al-contenido" href="#principal">Saltar al contenido</a>
+
+<!--
+  Iconos en SVG en linea. No se usan emojis ni glifos de texto como iconos:
+  un emoji cambia de forma segun el sistema y no se puede teclear su color.
+-->
+<svg class="hoja-iconos" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-cruz" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-aviso" viewBox="0 0 24 24"><path d="M12 3.5 22 20H2L12 3.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4.2M12 17.3v.1" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5.5M12 7.6v.1" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-copiar" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="12" height="12" rx="2.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 5.5H5.5a2 2 0 0 0-2 2v10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-descargar" viewBox="0 0 24 24"><path d="M12 3.5v12M7 11l5 5 5-5M4 20.5h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-buscar" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16.2 16.2 4.3 4.3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-mas" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-quitar" viewBox="0 0 24 24"><path d="M4 7h16M9.5 7V4.8h5V7M6.5 7l1 13h9l1-13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-enlace" viewBox="0 0 24 24"><path d="M13.5 4.5H19.5V10.5M19.5 4.5 11 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 14.5v4a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-bloque" viewBox="0 0 24 24"><path d="M12 2.6 21.4 7v10L12 21.4 2.6 17V7L12 2.6Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M2.6 7 12 11.6 21.4 7M12 11.6v9.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+</svg>
+
+<header class="cabecera">
+  <div class="contenedor cabecera__interior">
+    <h1 class="marca">
+      <svg class="marca__icono" aria-hidden="true" focusable="false"><use href="#i-bloque"></use></svg>
+      <span>Generador de servidores de Minecraft</span>
+    </h1>
+    <p class="cabecera__lema">
+      Elige la version, el cargador de mods y los mods que quieras.
+      Te devuelve el <code>docker-compose.yml</code>, el <code>.env</code> y los comandos exactos.
+    </p>
+
+    <div class="aviso aviso--destacado" role="note">
+      <svg class="aviso__icono" aria-hidden="true" focusable="false"><use href="#i-info"></use></svg>
+      <div>
+        <p><strong>Esta pagina no crea, no aloja ni ejecuta servidores.</strong></p>
+        <p>
+          Es un sitio estatico: no tiene servidor propio ni maquina donde correr nada.
+          Lo que hace es generar la configuracion correcta para que la levantes tu,
+          en tu PC o en tu VPS, con Docker. Nada se guarda ni se envia a ningun sitio.
+        </p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="principal" class="contenedor">
+
+  <!-- ====================== PASO 1: version y cargador ====================== -->
+  <section class="paso" id="paso-version" aria-labelledby="t-paso1">
+    <h2 class="paso__titulo" id="t-paso1"><span class="paso__numero">1</span> Version y cargador</h2>
+    <p class="paso__intro">
+      Primero la version de Minecraft. Despues el cargador: solo se pueden elegir los que
+      de verdad existen para esa version, comprobado en vivo contra los repositorios
+      oficiales de cada proyecto.
+    </p>
+
+    <div id="carga-catalogos" class="estado estado--cargando" role="status">
+      <span class="girador" aria-hidden="true"></span>
+      Consultando los catalogos oficiales de versiones y cargadores...
+    </div>
+
+    <div id="error-catalogos" class="estado estado--error" role="alert" hidden>
+      <svg aria-hidden="true" focusable="false"><use href="#i-aviso"></use></svg>
+      <div>
+        <p><strong>No se pudieron cargar los catalogos de versiones.</strong></p>
+        <p id="error-catalogos-detalle"></p>
+        <button type="button" class="boton boton--secundario" id="reintentar-catalogos">Reintentar</button>
+      </div>
+    </div>
+
+    <div id="bloque-version" hidden>
+      <div class="campo">
+        <label class="campo__etiqueta" for="version">Version de Minecraft</label>
+        <p class="campo__ayuda" id="ayuda-version">
+          Solo versiones estables (<em>release</em>). La lista y su orden vienen del manifiesto
+          oficial de Mojang, no de una lista escrita a mano.
+        </p>
+        <select id="version" class="control" aria-describedby="ayuda-version"></select>
+      </div>
+
+      <p class="nota-version" id="nota-version" hidden></p>
+
+      <fieldset class="campo campo--fieldset">
+        <legend class="campo__etiqueta">Cargador</legend>
+        <p class="campo__ayuda" id="ayuda-cargador">
+          Un cargador en gris no existe para la version elegida. Pasa el raton
+          o lee el texto de cada tarjeta para saber por que.
+        </p>
+        <div class="rejilla-cargadores" id="cargadores" role="radiogroup" aria-describedby="ayuda-cargador"></div>
+      </fieldset>
+
+      <div class="resumen-eleccion" id="resumen-eleccion" hidden></div>
+    </div>
+  </section>
+
+  <!-- ============================ PASO 2: mods ============================= -->
+  <section class="paso" id="paso-mods" aria-labelledby="t-paso2">
+    <h2 class="paso__titulo" id="t-paso2"><span class="paso__numero">2</span> Mods y plugins</h2>
+    <p class="paso__intro">
+      Busqueda en vivo contra la API publica de <a href="https://modrinth.com/" rel="noopener noreferrer" target="_blank">Modrinth</a>,
+      ya filtrada por la version y el cargador que elegiste. Este paso es opcional:
+      puedes generar un servidor sin mods.
+    </p>
+
+    <div class="aviso" role="note" id="aviso-mods-desactivado" hidden>
+      <svg class="aviso__icono" aria-hidden="true" focusable="false"><use href="#i-info"></use></svg>
+      <div id="aviso-mods-desactivado-texto"></div>
+    </div>
+
+    <div id="bloque-mods" hidden>
+      <div class="campo">
+        <label class="campo__etiqueta" for="busqueda-mods">Buscar por nombre</label>
+        <p class="campo__ayuda" id="ayuda-busqueda">
+          Escribe al menos dos letras. Tambien puedes pegar el identificador exacto
+          (el <em>slug</em> de la URL de Modrinth).
+        </p>
+        <div class="campo-busqueda">
+          <svg class="campo-busqueda__icono" aria-hidden="true" focusable="false"><use href="#i-buscar"></use></svg>
+          <input type="search" id="busqueda-mods" class="control control--busqueda" autocomplete="off"
+                 placeholder="Por ejemplo: JEI, Create, Chunky" aria-describedby="ayuda-busqueda">
+        </div>
+      </div>
+
+      <div id="resultados-mods" class="resultados" aria-live="polite" aria-busy="false"></div>
+      <div id="paginacion-mods" class="paginacion" hidden>
+        <button type="button" class="boton boton--secundario" id="mas-resultados">Ver mas resultados</button>
+        <p class="paginacion__cuenta" id="cuenta-resultados"></p>
+      </div>
+
+      <h3 class="subtitulo">Mods elegidos <span class="contador" id="contador-mods">0</span></h3>
+      <div id="dependencias" class="aviso aviso--atencion" role="status" hidden></div>
+      <div id="incompatibles" class="aviso aviso--error" role="alert" hidden></div>
+      <ul class="lista-elegidos" id="lista-elegidos">
+        <li class="lista-elegidos__vacio" id="elegidos-vacio">
+          Todavia no elegiste ningun mod. El servidor se generara sin mods.
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- =========================== PASO 3: ajustes =========================== -->
+  <section class="paso" id="paso-ajustes" aria-labelledby="t-paso3">
+    <h2 class="paso__titulo" id="t-paso3"><span class="paso__numero">3</span> Ajustes</h2>
+    <p class="paso__intro">
+      Valores por defecto razonables. Solo se escriben en el archivo generado los que
+      cambies o los que hagan falta: un compose corto que se entiende vale mas que uno
+      largo lleno de ruido.
+    </p>
+
+    <div class="rejilla-ajustes">
+      <div class="campo">
+        <label class="campo__etiqueta" for="memoria">Memoria para el servidor</label>
+        <p class="campo__ayuda" id="ayuda-memoria">
+          En gigabytes. Deja siempre unos 2 GB libres para el sistema operativo.
+        </p>
+        <div class="campo-unidad">
+          <input type="number" id="memoria" class="control" min="1" max="64" step="1" value="4" aria-describedby="ayuda-memoria">
+          <span class="campo-unidad__sufijo">GB</span>
+        </div>
+        <p class="campo__nota" id="nota-memoria"></p>
+      </div>
+
+      <div class="campo">
+        <label class="campo__etiqueta" for="dificultad">Dificultad</label>
+        <p class="campo__ayuda">Corresponde a <code>difficulty</code> en server.properties.</p>
+        <select id="dificultad" class="control">
+          <option value="peaceful">Pacifica</option>
+          <option value="easy">Facil</option>
+          <option value="normal" selected>Normal</option>
+          <option value="hard">Dificil</option>
+        </select>
+      </div>
+
+      <div class="campo">
+        <label class="campo__etiqueta" for="modo-juego">Modo de juego</label>
+        <p class="campo__ayuda">Corresponde a <code>gamemode</code>.</p>
+        <select id="modo-juego" class="control">
+          <option value="survival" selected>Supervivencia</option>
+          <option value="creative">Creativo</option>
+          <option value="adventure">Aventura</option>
+          <option value="spectator">Espectador</option>
+        </select>
+      </div>
+
+      <div class="campo">
+        <label class="campo__etiqueta" for="max-jugadores">Maximo de jugadores</label>
+        <p class="campo__ayuda">Cuantos pueden estar conectados a la vez.</p>
+        <input type="number" id="max-jugadores" class="control" min="1" max="200" step="1" value="10">
+      </div>
+
+      <div class="campo campo--ancho">
+        <label class="campo__etiqueta" for="motd">Mensaje del dia (MOTD)</label>
+        <p class="campo__ayuda" id="ayuda-motd">
+          El texto que se ve bajo el nombre del servidor en la lista del juego.
+        </p>
+        <input type="text" id="motd" class="control" maxlength="120" value="Servidor de Minecraft" aria-describedby="ayuda-motd">
+      </div>
+
+      <div class="campo">
+        <label class="campo__etiqueta" for="distancia-vision">Distancia de vision</label>
+        <p class="campo__ayuda">En chunks. Es lo que mas pesa en el rendimiento.</p>
+        <input type="number" id="distancia-vision" class="control" min="3" max="32" step="1" value="10">
+      </div>
+
+      <div class="campo">
+        <label class="campo__etiqueta" for="distancia-simulacion">Distancia de simulacion</label>
+        <p class="campo__ayuda">En chunks. Suele ir igual o por debajo de la de vision.</p>
+        <input type="number" id="distancia-simulacion" class="control" min="3" max="32" step="1" value="10">
+      </div>
+
+      <div class="campo">
+        <label class="campo__etiqueta" for="puerto">Puerto en tu maquina</label>
+        <p class="campo__ayuda" id="ayuda-puerto">
+          Se cambia el lado de fuera del contenedor, no el del servidor. Dentro sigue
+          siendo el 25565, que es lo que espera el juego.
+        </p>
+        <input type="number" id="puerto" class="control" min="1" max="65535" step="1" value="25565" aria-describedby="ayuda-puerto">
+      </div>
+
+      <div class="campo">
+        <label class="campo__etiqueta" for="mundo">Nombre del mundo</label>
+        <p class="campo__ayuda">Carpeta donde se guarda la partida.</p>
+        <input type="text" id="mundo" class="control" value="world" maxlength="60">
+      </div>
+
+      <div class="campo">
+        <label class="campo__etiqueta" for="zona-horaria">Zona horaria</label>
+        <p class="campo__ayuda">Para que la hora de los registros coincida con la tuya.</p>
+        <input type="text" id="zona-horaria" class="control" value="UTC" maxlength="60">
+      </div>
+
+      <div class="campo campo--ancho">
+        <label class="campo__etiqueta" for="operadores">Operadores</label>
+        <p class="campo__ayuda" id="ayuda-ops">
+          Nombres de cuenta separados por coma. Tendran permisos de administrador.
+          Dejalo vacio si prefieres darlos despues desde la consola.
+        </p>
+        <input type="text" id="operadores" class="control" placeholder="Jugador1, Jugador2" aria-describedby="ayuda-ops">
+      </div>
+    </div>
+
+    <div class="opciones">
+      <label class="opcion">
+        <input type="checkbox" id="modo-online" checked>
+        <span>
+          <strong>Modo en linea</strong>
+          <em>Exige cuentas legitimas de Minecraft. Dejalo activado salvo que sepas lo que haces.</em>
+        </span>
+      </label>
+
+      <label class="opcion">
+        <input type="checkbox" id="flags-aikar" checked>
+        <span>
+          <strong>Flags de JVM de Aikar</strong>
+          <em>Ajustes del recolector de basura documentados por PaperMC. Los aplica la propia imagen con <code>USE_AIKAR_FLAGS</code>.</em>
+        </span>
+      </label>
+
+      <label class="opcion">
+        <input type="checkbox" id="copias">
+        <span>
+          <strong>Copias de seguridad automaticas</strong>
+          <em>Anade un segundo contenedor (<code>itzg/mc-backup</code>) que copia el mundo cada 24 horas.</em>
+        </span>
+      </label>
+
+      <label class="opcion">
+        <input type="checkbox" id="deps-modrinth" checked>
+        <span>
+          <strong>Descargar dependencias obligatorias</strong>
+          <em>Pone <code>MODRINTH_DOWNLOAD_DEPENDENCIES=required</code> para que la imagen resuelva sola lo que falte.</em>
+        </span>
+      </label>
+    </div>
+  </section>
+
+  <!-- =========================== PASO 4: salida ============================ -->
+  <section class="paso" id="paso-salida" aria-labelledby="t-paso4">
+    <h2 class="paso__titulo" id="t-paso4"><span class="paso__numero">4</span> Tu configuracion</h2>
+
+    <div class="aviso aviso--atencion" role="note">
+      <svg class="aviso__icono" aria-hidden="true" focusable="false"><use href="#i-aviso"></use></svg>
+      <div>
+        <p><strong>El EULA viene sin aceptar, a proposito.</strong></p>
+        <p>
+          El archivo generado lleva <code>EULA=FALSE</code> y el servidor no arrancara asi.
+          Poner <code>TRUE</code> es una declaracion tuya de que leiste y aceptas el
+          <a href="https://aka.ms/MinecraftEULA" rel="noopener noreferrer" target="_blank">contrato de licencia de Minecraft</a>.
+          Esta pagina no opera ningun servidor y no puede aceptarlo por ti.
+        </p>
+      </div>
+    </div>
+
+    <div class="salida">
+      <div class="salida__cabecera">
+        <h3 class="subtitulo" id="t-compose">docker-compose.yml</h3>
+        <div class="salida__acciones">
+          <button type="button" class="boton" data-copiar="codigo-compose">
+            <svg aria-hidden="true" focusable="false"><use href="#i-copiar"></use></svg> Copiar
+          </button>
+          <button type="button" class="boton boton--secundario" data-descargar="compose">
+            <svg aria-hidden="true" focusable="false"><use href="#i-descargar"></use></svg> Descargar
+          </button>
+        </div>
+      </div>
+      <pre class="codigo" tabindex="0" aria-labelledby="t-compose"><code id="codigo-compose"></code></pre>
+    </div>
+
+    <div class="salida">
+      <div class="salida__cabecera">
+        <h3 class="subtitulo" id="t-env">.env</h3>
+        <div class="salida__acciones">
+          <button type="button" class="boton" data-copiar="codigo-env">
+            <svg aria-hidden="true" focusable="false"><use href="#i-copiar"></use></svg> Copiar
+          </button>
+          <button type="button" class="boton boton--secundario" data-descargar="env">
+            <svg aria-hidden="true" focusable="false"><use href="#i-descargar"></use></svg> Descargar
+          </button>
+        </div>
+      </div>
+      <pre class="codigo" tabindex="0" aria-labelledby="t-env"><code id="codigo-env"></code></pre>
+    </div>
+
+    <div class="salida">
+      <div class="salida__cabecera">
+        <h3 class="subtitulo" id="t-comandos">Comandos</h3>
+        <div class="salida__acciones">
+          <button type="button" class="boton" data-copiar="codigo-comandos">
+            <svg aria-hidden="true" focusable="false"><use href="#i-copiar"></use></svg> Copiar
+          </button>
+        </div>
+      </div>
+      <pre class="codigo" tabindex="0" aria-labelledby="t-comandos"><code id="codigo-comandos"></code></pre>
+    </div>
+
+    <p class="nota-descarga">
+      El boton de copiar es el camino principal y funciona siempre. Las descargas que
+      inicia un script estan bloqueadas en algunos navegadores y contextos; si el boton
+      de descargar no hace nada, copia y pega.
+    </p>
+    <p aria-live="polite" class="aviso-copia" id="aviso-copia"></p>
+  </section>
+
+  <!-- ========================= Seccion honesta ============================= -->
+  <section class="paso paso--texto" id="como-funciona" aria-labelledby="t-como">
+    <h2 class="paso__titulo" id="t-como">Que hace y que no hace esta pagina</h2>
+
+    <div class="dos-columnas">
+      <div class="tarjeta-texto tarjeta-texto--si">
+        <h3><svg aria-hidden="true" focusable="false"><use href="#i-check"></use></svg> Lo que si hace</h3>
+        <ul>
+          <li>Consulta en vivo los catalogos oficiales de Mojang, Forge, NeoForge, Fabric, Quilt, Paper y Purpur para saber que combinaciones existen de verdad.</li>
+          <li>Busca mods en Modrinth filtrando ya por tu version y tu cargador.</li>
+          <li>Impide anadir mods que solo funcionan en el cliente.</li>
+          <li>Escribe un <code>docker-compose.yml</code> y un <code>.env</code> correctos para la imagen <code>itzg/minecraft-server</code>.</li>
+          <li>Elige la etiqueta de Java que corresponde, leyendo el campo <code>javaVersion</code> que publica Mojang para cada version.</li>
+        </ul>
+      </div>
+      <div class="tarjeta-texto tarjeta-texto--no">
+        <h3><svg aria-hidden="true" focusable="false"><use href="#i-cruz"></use></svg> Lo que no hace</h3>
+        <ul>
+          <li>No crea, no aloja ni ejecuta servidores. No hay ninguna maquina detras de esta pagina.</li>
+          <li>No descarga ni redistribuye mods, ni el jar de Minecraft, ni el cliente. Todo eso lo baja tu contenedor en el primer arranque desde las fuentes oficiales.</li>
+          <li>No guarda nada tuyo: no hay cuentas, ni cookies de seguimiento, ni servidor donde guardarlo.</li>
+          <li>No puede saber si dos mods chocan entre si. Eso solo se ve al arrancar.</li>
+          <li>No acepta el EULA por ti.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 class="subtitulo">Lo que necesitas de tu lado</h3>
+    <ol class="lista-pasos">
+      <li>Una maquina encendida: tu PC, un servidor de casa o un VPS.</li>
+      <li><a href="https://docs.docker.com/get-docker/" rel="noopener noreferrer" target="_blank">Docker</a> con el complemento Compose. No hace falta instalar Java: va dentro de la imagen.</li>
+      <li>Espacio en disco y memoria libre. El primer arranque descarga bastante y tarda.</li>
+      <li>Si quieres que entren desde fuera de tu red, abrir el puerto en el router o usar un tunel.</li>
+    </ol>
+
+    <h3 class="subtitulo">De donde salen los datos</h3>
+    <ul class="lista-fuentes" id="lista-fuentes"></ul>
+  </section>
+
+</main>
+
+<footer class="pie">
+  <div class="contenedor">
+    <h2 class="pie__titulo">Avisos legales</h2>
+    <p>
+      <strong>Minecraft</strong> es una marca registrada de Mojang Synergies AB y Microsoft.
+      Esta pagina no esta afiliada, patrocinada ni respaldada por Mojang ni por Microsoft,
+      y no es un producto oficial de Minecraft.
+    </p>
+    <p>
+      Tampoco esta afiliada ni respaldada por <strong>Modrinth</strong>, cuya API publica
+      consume para buscar mods, ni por <strong>itzg</strong> (autor de la imagen de Docker),
+      <strong>PaperMC</strong>, <strong>PurpurMC</strong>, <strong>MinecraftForge</strong>,
+      <strong>NeoForged</strong>, <strong>FabricMC</strong> ni <strong>QuiltMC</strong>.
+    </p>
+    <p>
+      Esta pagina no distribuye ningun archivo con derechos de autor. No contiene mods,
+      ni el servidor de Minecraft, ni jars de ningun cargador: genera texto de
+      configuracion, y las descargas las hace tu propio contenedor en tiempo de ejecucion
+      desde las fuentes oficiales de cada proyecto.
+    </p>
+    <p class="pie__meta">
+      Codigo bajo licencia MIT.
+      <a href="https://github.com/gui21657/generador-minecraft" rel="noopener noreferrer" target="_blank">
+        Repositorio y contacto
+        <svg class="icono-en-linea" aria-hidden="true" focusable="false"><use href="#i-enlace"></use></svg>
+      </a>
+    </p>
+  </div>
+</footer>
+
+<script src="assets/js/api.js"></script>
+<script src="assets/js/compat.js"></script>
+<script src="assets/js/generador.js"></script>
+<script src="assets/js/mods.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

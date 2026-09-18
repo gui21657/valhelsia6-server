@@ -14,16 +14,16 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Comprobar que el YAML es valido
-        run: python3 -c "import yaml,sys; yaml.safe_load(open('docker-compose.yml')); print('YAML valido')"
+        run: python3 -c "import yaml,sys; yaml.safe_load(open('ejemplo-valhelsia/docker-compose.yml')); print('YAML valido')"
 
       - name: Resolver el compose con los valores de .env.example
         run: |
-          cp .env.example .env
+          cp ejemplo-valhelsia/.env.example ejemplo-valhelsia/.env
           docker compose config
 
       - name: El compose no debe traer el EULA pre-aceptado
         run: |
-          cp .env.example .env
+          cp ejemplo-valhelsia/.env.example ejemplo-valhelsia/.env
           if docker compose config | grep -iE 'EULA:[[:space:]]*"?(TRUE|true)"?'; then
             echo "ERROR: el EULA no puede venir aceptado de fabrica." >&2
             exit 1
@@ -91,8 +91,8 @@ jobs:
             echo "ERROR: posible clave de API de CurseForge en el repositorio." >&2
             exit 1
           fi
-          if grep -nE '^[[:space:]]*PLAYIT_SECRET_KEY[[:space:]]*=[[:space:]]*.+' .env.example; then
-            echo "ERROR: PLAYIT_SECRET_KEY debe quedar vacio en .env.example." >&2
+          if grep -nE '^[[:space:]]*PLAYIT_SECRET_KEY[[:space:]]*=[[:space:]]*.+' ejemplo-valhelsia/.env.example; then
+            echo "ERROR: PLAYIT_SECRET_KEY debe quedar vacio en ejemplo-valhelsia/.env.example." >&2
             exit 1
           fi
           echo "Correcto: sin .env versionado ni claves incrustadas."
