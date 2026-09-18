@@ -1,0 +1,39 @@
+# Unidad de systemd para que el servidor arranque solo al encender la maquina
+# y se pare limpiamente al apagarla.
+#
+# Instalacion (ver despliegue/instalar-vps.sh, que ya lo hace por ti):
+#   sudo cp despliegue/valhelsia.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now valhelsia
+#
+# Si clonaste el repositorio en otra ruta, cambia WorkingDirectory.
+
+[Unit]
+Description=Servidor de Minecraft Valhelsia 6
+Documentation=https://github.com/gui21657/valhelsia6-server
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/valhelsia6-server
+
+# El perfil "tunel" levanta tambien el agente de playit.gg. Por defecto NO
+# sube: un VPS ya tiene IP publica y no lo necesita. Si lo quieres, anade
+# --profile tunel a las dos lineas de abajo.
+ExecStart=/usr/bin/docker compose up -d
+
+# 'stop' y no 'down': para el contenedor guardando el mundo y lo deja listo
+# para el siguiente arranque. Docker envia SIGTERM, que la imagen traduce a un
+# 'stop' de la consola del servidor.
+ExecStop=/usr/bin/docker compose stop
+
+# La primera arrancada instala Forge y ~250 mods. Puede pasar de media hora.
+TimeoutStartSec=0
+# Margen generoso para que el mundo termine de guardarse antes de apagar.
+TimeoutStopSec=300
+
+[Install]
+WantedBy=multi-user.target

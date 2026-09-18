@@ -61,11 +61,11 @@ un dato oficial del equipo de Valhelsia.**
 
 Tres reglas que evitan la mayoria de los problemas:
 
-1. **Nunca asignes al servidor mas de la mitad de la RAM fisica de la maquina.**
-   El proceso de Java consume bastante memoria por encima del heap, y el sistema
-   operativo tambien necesita la suya. Un `-Xmx` de 8 GB en una maquina de 8 GB
-   no va mas rapido: va peor, porque el sistema se pone a usar el archivo de
-   intercambio.
+1. **Deja siempre al menos 2 GB libres para el sistema.** Es la regla que sigue
+   la tabla de arriba: el heap es la RAM fisica menos 2 GB. El proceso de Java
+   consume bastante memoria por encima del heap, y el sistema operativo tambien
+   necesita la suya. Un `-Xmx` de 8 GB en una maquina de 8 GB no va mas rapido:
+   va peor, porque el sistema se pone a usar el archivo de intercambio.
 2. **Mas RAM no es siempre mejor.** Por encima de unos 12 GB de heap, el
    recolector de basura G1 que usa este pack empieza a provocar pausas largas y
    perceptibles. Si de verdad necesitas mas, hay que cambiar de configuracion de
@@ -243,6 +243,237 @@ no lo repiten.
 
 ---
 
+## Un servidor siempre encendido (sin depender de tu PC)
+
+Si quieres que tus amigos entren aunque tu ordenador este apagado, el servidor
+tiene que correr en una maquina que no sea el tuyo. Este apartado compara las
+vias reales y explica una que **no** funciona, porque es la que todo el mundo
+intenta primero.
+
+### Por que GitHub Actions no sirve para esto
+
+Es tentador: el repositorio ya esta en GitHub y Actions ejecuta maquinas Linux
+gratis. Pero no es viable, por tres motivos independientes, y cualquiera de
+ellos basta.
+
+**1. Lo prohiben los terminos de servicio.** No aparece la frase "servidores de
+juego" en ninguna politica de GitHub, pero hay dos clausulas que cubren el caso
+de forma directa. De los
+[GitHub Terms for Additional Products and Features](https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features),
+seccion Actions:
+
+> If using GitHub-hosted runners, any other activity unrelated to the
+> production, testing, deployment, or publication of the software project
+> associated with the repository where GitHub Actions are used.
+
+> You may only access and use GitHub Actions to develop and test your
+> application(s). Only one licensed user may access a virtual machine provided
+> by Actions at any time.
+
+Un servidor para jugar no es producir, probar, desplegar ni publicar software,
+y "un unico usuario con licencia por maquina virtual" es justo lo contrario de
+un servidor multijugador. Las consecuencias tambien estan escritas:
+
+> Misuse of GitHub Actions may result in termination of jobs, restrictions in
+> your ability to use GitHub Actions, disabling of repositories created to run
+> Actions in a way that violates these Terms, or in some cases, suspension or
+> termination of your GitHub account.
+
+Es decir: te arriesgas a perder la cuenta de GitHub. No merece la pena por un
+servidor de Minecraft.
+
+**2. Se corta cada 6 horas.** El
+[limite de ejecucion de un job](https://docs.github.com/en/actions/reference/limits)
+en un runner de GitHub es de 6 horas, y la documentacion lo marca
+explicitamente como no ampliable. La partida se cortaria de golpe como mucho
+cada 6 horas, sin apagado ordenado, con el riesgo de corromper el mundo.
+
+**3. No se puede entrar de fuera.** Los runners no tienen IP publica fija a la
+que conectarse: corren en maquinas virtuales de Azure con
+[IP dinamica que cambia en cada job](https://docs.github.com/en/actions/reference/runners/larger-runners#networking-for-larger-runners),
+y no hay forma documentada de abrir un puerto entrante. Ademas el disco es
+efimero: al acabar el job la maquina se destruye y el mundo se pierde salvo que
+lo subas a algun sitio en cada corte.
+
+Un apunte de tamano, por si aun asi tienes la duda: el runner estandar de un
+**repositorio privado** tiene 2 nucleos y 8 GB de RAM, insuficiente para los
+6-8 GB de heap que pide este pack. Los 16 GB solo los dan los repositorios
+**publicos**, lo que significa publicar tu configuracion y tu mundo.
+
+Lo mismo aplica a Codespaces y a cualquier otro entorno de CI: no son hosting.
+
+### Las vias que si funcionan
+
+Datos consultados en septiembre de 2026. **Los precios y los tiers cambian a
+menudo: reconfirmalos antes de pagar.**
+
+| Via | Coste | Siempre encendido | Pegas |
+| --- | --- | --- | --- |
+| **VPS de pago** (Hetzner CX33 y similares) | ~9 EUR/mes | Si | Lo administras tu |
+| **Oracle Cloud Always Free** | 0 EUR | Casi | ARM, capacidad, se para si esta inactivo |
+| **Hosting por horas** (exaroton) | ~0,08 EUR/hora a 8 GB | Solo mientras jugais | Pagas por uso |
+| **Hosting de Minecraft de pago** | ~8-24 USD/mes | Si | El mas caro por GB |
+| **Tu PC + el tunel** | 0 EUR | No | Depende de tu maquina |
+| ~~Aternos~~ | 0 EUR | No | **No admite este modpack** |
+
+Dos avisos concretos, porque son los que mas tiempo hacen perder:
+
+- **Aternos no vale para Valhelsia 6**, y el motivo es la capacidad, no las
+  ganas. Segun su centro de ayuda, cada servidor gratuito tiene un techo de
+  [4 GB de almacenamiento](https://support.aternos.org/hc/en-us/articles/360035144691-Maximum-allowed-server-size)
+  y la RAM no se elige: se asigna sola, y solo se amplia con
+  [«boosts» de 500 MB apilables hasta cinco](https://support.aternos.org/hc/en-us/articles/31371671484061-Boost-your-server-ram),
+  o sea +2,5 GB como mucho. Ese techo se queda muy por debajo de los 6-8 GB que
+  pide este pack, asi que da igual como consigas meter los mods: no arranca
+  bien. Si alguien te recomienda Aternos para Valhelsia 6, no lo ha probado.
+
+  Un aviso de honestidad sobre este punto: no pude abrir las paginas de Aternos
+  desde aqui para leerlas yo mismo, asi que esto sale de lo que sus articulos
+  dicen segun los buscadores. Si te lo estas planteando en serio, comprueba las
+  cifras en su web antes de invertir una tarde.
+- **Oracle Always Free se recorto a la mitad.** Desde el 15 de junio de 2026 el
+  cupo de Ampere A1 es de **2 OCPU y 12 GB de RAM**, no los 4 OCPU y 24 GB que
+  siguen repitiendo casi todas las guias de internet. 12 GB todavia dan para
+  este pack, pero cuenta con tres pegas: es ARM (algun mod con librerias
+  nativas puede fallar), el error "Out of host capacity" al crear la instancia
+  es cronico, y Oracle
+  [para las instancias gratuitas inactivas](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm)
+  cuando durante 7 dias el percentil 95 de CPU, red y memoria baja del 20 %.
+  Un servidor de Minecraft vacio encaja exactamente en ese perfil. La
+  reclamacion afecta a los recursos Always Free, asi que convertir la cuenta a
+  Pay As You Go es la salida habitual; ojo, sobre que cuota conserva una cuenta
+  Pay As You Go hay informes contradictorios y el propio soporte de Oracle ha
+  dado respuestas distintas, asi que confirmalo con ellos antes de contar con
+  ello.
+
+**Para 2 a 4 jugadores**, si no quieres administrar nada y jugais por sesiones,
+el pago por horas sale muy barato. Si quereis el mundo disponible a cualquier
+hora y no os importa administrar una maquina, un VPS x86 de 8 GB por unos
+9 EUR/mes es lo mas predecible: sin ARM, sin colas y sin sorpresas.
+
+### Desplegarlo en un VPS
+
+Una vez tengas la maquina (Ubuntu o Debian), desde ella:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/gui21657/valhelsia6-server/main/despliegue/instalar-vps.sh -o instalar-vps.sh
+less instalar-vps.sh      # leelo antes de ejecutarlo como root
+sudo bash instalar-vps.sh
+```
+
+El script instala Docker, clona el repositorio en `/opt/valhelsia6-server`,
+ajusta `RAM_MAXIMA` a la RAM de la maquina, abre el puerto en el cortafuegos
+del sistema, y deja instaladas dos cosas de systemd:
+
+- `valhelsia.service` — arranca el servidor solo al encender la maquina y lo
+  para guardando el mundo al apagarla.
+- `valhelsia-copia.timer` — copia de seguridad del mundo cada dia a las 05:00,
+  conservando las 7 ultimas.
+
+Luego te queda aceptar el EULA en `.env` y arrancar:
+
+```bash
+sudo systemctl start valhelsia
+```
+
+**El fallo numero uno al montar esto en la nube:** ademas del cortafuegos del
+sistema operativo, tu proveedor tiene otro cortafuegos propio, cerrado por
+defecto, y hay que abrir ahi el puerto 25565/TCP. En Oracle Cloud esta en
+Networking > VCN > Subnet > Security List > Ingress Rules. En AWS es el
+Security Group; en Hetzner y Contabo, el cortafuegos del panel. Si el servidor
+arranca bien pero nadie puede entrar, empieza mirando ahi.
+
+Las copias tambien se pueden lanzar a mano en cualquier momento, y no hace
+falta parar el servidor:
+
+```bash
+./despliegue/copia-seguridad.sh
+```
+
+---
+
+## Que direccion usan mis amigos para entrar
+
+Este repositorio **no aloja nada ni reparte ninguna IP**. Lo que hace es
+levantar el servidor en una maquina tuya; la direccion es la de esa maquina.
+Hasta que no arranques el servidor en algun sitio, no existe ninguna direccion
+que dar.
+
+Para ver las direcciones que tienes disponibles en cada momento:
+
+```bash
+./direccion.sh          # Linux y macOS
+```
+
+```
+direccion.bat           Windows
+```
+
+El script distingue los cuatro casos, porque no sirven para lo mismo:
+
+| Donde estan los jugadores | Direccion | Que hace falta |
+| --- | --- | --- |
+| En la misma maquina | `localhost:25565` | Nada |
+| En tu misma casa o wifi | `192.168.x.x:25565` | Nada |
+| Por internet, sin tocar el router | `algo.joinmc.link` | El tunel de abajo |
+| Por internet, con el router abierto | tu IP publica`:25565` | Cortafuegos y redireccion de puertos |
+
+### Opcion sin tocar el router (tunel de playit.gg)
+
+Es la via practica si el router no coopera, o si tu proveedor te tiene detras
+de CGNAT y la redireccion de puertos no puede funcionar por mucho que la
+configures. [playit.gg](https://playit.gg/) es un servicio externo y gratuito
+que te presta una direccion publica y reenvia el trafico a tu maquina.
+
+1. Crea una cuenta gratuita en playit.gg.
+2. En su panel anade un agente de tipo **Docker**. Te dara una clave larga.
+3. Pon esa clave en tu `.env`:
+
+   ```
+   PLAYIT_SECRET_KEY=la-clave-que-te-dio
+   ```
+
+4. En el mismo panel crea un tunel de tipo **Minecraft Java** con:
+
+   - Local Address: `172.28.0.10`
+   - Local Port: `25565`
+
+   Esa es la IP interna fija que `docker-compose.yml` le da al contenedor del
+   servidor. Tiene que ser la IP: playit no acepta nombres de contenedor en ese
+   campo.
+
+5. Arranca el tunel. No sube con `docker compose up -d` normal, hay que pedirlo:
+
+   ```bash
+   docker compose --profile tunel up -d
+   ```
+
+6. Consulta la direccion que te asignaron con `./direccion.sh`, o directamente:
+
+   ```bash
+   docker compose logs -f playit
+   ```
+
+Tres cosas honestas sobre esta via:
+
+- **La clave de playit es una credencial.** Va en `.env`, que esta en
+  `.gitignore`. No la escribas en `docker-compose.yml` ni la subas al repo.
+- **El trafico pasa por un tercero.** Es su servicio y sus condiciones; el plan
+  gratuito da hasta tres tuneles. Si eso no te sirve, la alternativa es abrir el
+  puerto o alquilar un servidor.
+- **Un tunel anade algo de latencia** frente a una conexion directa, porque el
+  trafico da un rodeo. Para una partida de dos a cuatro personas se nota poco.
+
+### Lo que el tunel no resuelve
+
+El tunel te da una direccion, no una maquina. El servidor sigue corriendo en tu
+ordenador, asi que **tiene que estar encendido y con el servidor arrancado**
+cada vez que alguien quiera jugar, y necesita la RAM de la tabla de hardware.
+Si quieres que el mundo este disponible sin depender de tu equipo, lo que hace
+falta es un servidor alquilado, no un tunel.
+
+---
+
 ## Abrir el puerto 25565
 
 Mientras solo juegues en tu red local no hace falta tocar nada. Para que entre
@@ -295,8 +526,11 @@ Dos avisos honestos sobre esto:
   que solo entren cuentas legitimas, y considera activar una lista blanca de
   jugadores.
 
-Si el router no coopera, hay alternativas sin abrir puertos (redes privadas
-virtuales tipo Tailscale o ZeroTier, o alquilar un servidor).
+Si el router no coopera, no hace falta pelearse con el: este repositorio trae
+el tunel de playit.gg ya integrado, explicado en
+[Que direccion usan mis amigos para entrar](#que-direccion-usan-mis-amigos-para-entrar).
+Otras alternativas son las redes privadas virtuales tipo Tailscale o ZeroTier,
+o alquilar un servidor.
 
 ---
 
@@ -484,6 +718,17 @@ el proceso deja fragmentos del mundo sin guardar.
 - Contenido del propio `Valhelsia-6-6.2.3-SERVER.zip`: su `README.txt`, su
   `ServerStart.sh` y el nombre del instalador de Forge que incluye
 - [Repositorio de configuracion de Valhelsia 6](https://github.com/ValhelsiaTeam/Valhelsia-6)
+- [GitHub Terms for Additional Products and Features](https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features),
+  seccion Actions: usos prohibidos y consecuencias del abuso
+- [Limites de GitHub Actions](https://docs.github.com/en/actions/reference/limits)
+  (maximo de 6 horas por job, no ampliable)
+- [Especificaciones de los runners de GitHub](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)
+  y [red de los runners](https://docs.github.com/en/actions/reference/runners/larger-runners#networking-for-larger-runners)
+- [Recursos Always Free de Oracle Cloud](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm),
+  incluida la reclamacion de instancias inactivas
+- [Centro de ayuda de Aternos](https://support.aternos.org/), limites de
+  almacenamiento y de subida de archivos
+- [Agente de playit.gg](https://github.com/playit-cloud/playit-agent)
 - [Documentacion de la imagen itzg/minecraft-server](https://docker-minecraft-server.readthedocs.io/),
   apartados de [modpacks de CurseForge](https://docker-minecraft-server.readthedocs.io/en/latest/types-and-platforms/mod-platforms/auto-curseforge/),
   [opciones de la maquina virtual de Java](https://docker-minecraft-server.readthedocs.io/en/latest/configuration/jvm-options/)

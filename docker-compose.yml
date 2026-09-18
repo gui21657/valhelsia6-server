@@ -51,6 +51,12 @@ services:
       SETUP_ONLY: "false"
       ENABLE_ROLLING_LOGS: "true"
 
+    networks:
+      # IP interna fija. El agente del tunel necesita una direccion IP concreta:
+      # playit no resuelve nombres de contenedor en el campo "Local Address".
+      valhelsia_red:
+        ipv4_address: 172.28.0.10
+
     volumes:
       # Mundo, mods descargados y configuracion. Persisten entre reinicios.
       - ./datos:/data
@@ -66,3 +72,38 @@ services:
       interval: 30s
       timeout: 20s
       retries: 10
+
+  # --------------------------------------------------------------------------
+  # Tunel opcional: da una direccion publica sin tocar el router.
+  # --------------------------------------------------------------------------
+  # No arranca con 'docker compose up -d'. Hay que pedirlo a proposito:
+  #   docker compose --profile tunel up -d
+  #
+  # Antes de usarlo hace falta una cuenta gratuita en https://playit.gg/ ,
+  # poner la clave del agente en PLAYIT_SECRET_KEY dentro de .env, y crear en
+  # su panel un tunel de tipo "Minecraft Java" apuntando a 172.28.0.10:25565.
+  # La direccion que reparte playit sale en el registro de este contenedor.
+  playit:
+    image: ghcr.io/playit-cloud/playit-agent:latest
+    container_name: valhelsia6-tunel
+    profiles: ["tunel"]
+    restart: unless-stopped
+
+    environment:
+      # Se define en .env. Es una credencial: nunca la escribas aqui.
+      SECRET_KEY: "${PLAYIT_SECRET_KEY:-}"
+
+    networks:
+      - valhelsia_red
+
+    depends_on:
+      - valhelsia
+
+networks:
+  valhelsia_red:
+    driver: bridge
+    ipam:
+      config:
+        # Subred fija para que 172.28.0.10 sea siempre el servidor. Si esta
+        # subred choca con tu red local, cambia los dos valores a la vez.
+        - subnet: 172.28.0.0/16
