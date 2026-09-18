@@ -36,17 +36,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Comprobar la sintaxis de iniciar.sh
-        run: bash -n iniciar.sh
+      - name: Comprobar la sintaxis de los scripts de shell
+        run: |
+          bash -n iniciar.sh
+          bash -n direccion.sh
 
-      - name: Analizar iniciar.sh con shellcheck
+      - name: Analizar los scripts de shell con shellcheck
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq shellcheck
-          shellcheck --severity=warning iniciar.sh
+          shellcheck --severity=warning iniciar.sh direccion.sh
 
-      - name: Comprobar que iniciar.bat existe y no esta vacio
-        run: test -s iniciar.bat
+      - name: Comprobar que los scripts de Windows existen y no estan vacios
+        run: |
+          test -s iniciar.bat
+          test -s direccion.bat
 
   licencia:
     name: Sin archivos con copyright
@@ -72,6 +76,10 @@ jobs:
           fi
           if grep -rIn --exclude-dir=.git -E '\$2a\$10\$[A-Za-z0-9./]{20,}' .; then
             echo "ERROR: posible clave de API de CurseForge en el repositorio." >&2
+            exit 1
+          fi
+          if grep -nE '^[[:space:]]*PLAYIT_SECRET_KEY[[:space:]]*=[[:space:]]*.+' .env.example; then
+            echo "ERROR: PLAYIT_SECRET_KEY debe quedar vacio en .env.example." >&2
             exit 1
           fi
           echo "Correcto: sin .env versionado ni claves incrustadas."

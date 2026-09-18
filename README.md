@@ -243,6 +243,88 @@ no lo repiten.
 
 ---
 
+## Que direccion usan mis amigos para entrar
+
+Este repositorio **no aloja nada ni reparte ninguna IP**. Lo que hace es
+levantar el servidor en una maquina tuya; la direccion es la de esa maquina.
+Hasta que no arranques el servidor en algun sitio, no existe ninguna direccion
+que dar.
+
+Para ver las direcciones que tienes disponibles en cada momento:
+
+```bash
+./direccion.sh          # Linux y macOS
+```
+
+```
+direccion.bat           Windows
+```
+
+El script distingue los cuatro casos, porque no sirven para lo mismo:
+
+| Donde estan los jugadores | Direccion | Que hace falta |
+| --- | --- | --- |
+| En la misma maquina | `localhost:25565` | Nada |
+| En tu misma casa o wifi | `192.168.x.x:25565` | Nada |
+| Por internet, sin tocar el router | `algo.joinmc.link` | El tunel de abajo |
+| Por internet, con el router abierto | tu IP publica`:25565` | Cortafuegos y redireccion de puertos |
+
+### Opcion sin tocar el router (tunel de playit.gg)
+
+Es la via practica si el router no coopera, o si tu proveedor te tiene detras
+de CGNAT y la redireccion de puertos no puede funcionar por mucho que la
+configures. [playit.gg](https://playit.gg/) es un servicio externo y gratuito
+que te presta una direccion publica y reenvia el trafico a tu maquina.
+
+1. Crea una cuenta gratuita en playit.gg.
+2. En su panel anade un agente de tipo **Docker**. Te dara una clave larga.
+3. Pon esa clave en tu `.env`:
+
+   ```
+   PLAYIT_SECRET_KEY=la-clave-que-te-dio
+   ```
+
+4. En el mismo panel crea un tunel de tipo **Minecraft Java** con:
+
+   - Local Address: `172.28.0.10`
+   - Local Port: `25565`
+
+   Esa es la IP interna fija que `docker-compose.yml` le da al contenedor del
+   servidor. Tiene que ser la IP: playit no acepta nombres de contenedor en ese
+   campo.
+
+5. Arranca el tunel. No sube con `docker compose up -d` normal, hay que pedirlo:
+
+   ```bash
+   docker compose --profile tunel up -d
+   ```
+
+6. Consulta la direccion que te asignaron con `./direccion.sh`, o directamente:
+
+   ```bash
+   docker compose logs -f playit
+   ```
+
+Tres cosas honestas sobre esta via:
+
+- **La clave de playit es una credencial.** Va en `.env`, que esta en
+  `.gitignore`. No la escribas en `docker-compose.yml` ni la subas al repo.
+- **El trafico pasa por un tercero.** Es su servicio y sus condiciones; el plan
+  gratuito da hasta tres tuneles. Si eso no te sirve, la alternativa es abrir el
+  puerto o alquilar un servidor.
+- **Un tunel anade algo de latencia** frente a una conexion directa, porque el
+  trafico da un rodeo. Para una partida de dos a cuatro personas se nota poco.
+
+### Lo que el tunel no resuelve
+
+El tunel te da una direccion, no una maquina. El servidor sigue corriendo en tu
+ordenador, asi que **tiene que estar encendido y con el servidor arrancado**
+cada vez que alguien quiera jugar, y necesita la RAM de la tabla de hardware.
+Si quieres que el mundo este disponible sin depender de tu equipo, lo que hace
+falta es un servidor alquilado, no un tunel.
+
+---
+
 ## Abrir el puerto 25565
 
 Mientras solo juegues en tu red local no hace falta tocar nada. Para que entre
@@ -295,8 +377,11 @@ Dos avisos honestos sobre esto:
   que solo entren cuentas legitimas, y considera activar una lista blanca de
   jugadores.
 
-Si el router no coopera, hay alternativas sin abrir puertos (redes privadas
-virtuales tipo Tailscale o ZeroTier, o alquilar un servidor).
+Si el router no coopera, no hace falta pelearse con el: este repositorio trae
+el tunel de playit.gg ya integrado, explicado en
+[Que direccion usan mis amigos para entrar](#que-direccion-usan-mis-amigos-para-entrar).
+Otras alternativas son las redes privadas virtuales tipo Tailscale o ZeroTier,
+o alquilar un servidor.
 
 ---
 
