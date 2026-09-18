@@ -306,7 +306,11 @@
   // escrito NO da error: devuelve 200 con cero resultados, que en pantalla se
   // ve exactamente igual que "no hay mods para esa combinacion".
   function etiquetasModrinth() {
-    var guardado = leerLocal('gm:tags', CACHE_TAGS_HORAS);
+    // La clave lleva version. Al anadir campos nuevos al catalogo (los
+    // cargadores que admiten modpacks), una cache de la forma anterior seguiria
+    // viva 24 horas y esos campos llegarian vacios, que es indistinguible de
+    // "no hay ningun cargador con modpacks". Subir el numero la invalida.
+    var guardado = leerLocal('gm:tags2', CACHE_TAGS_HORAS);
     if (guardado) {
       memoria.set('tags', guardado);
       return Promise.resolve(guardado);
@@ -319,11 +323,19 @@
     ]).then(function (r) {
       var v = {
         cargadores: r[0].map(function (x) { return x.name; }),
+        // No todo cargador tiene modpacks: Modrinth solo los indexa para los
+        // cargadores de mods. Paper y Purpur aparecen en /tag/loader pero su
+        // supported_project_types no incluye "modpack", asi que buscar
+        // modpacks de Paper devuelve 200 con cero resultados para siempre.
+        // Se lee del propio catalogo en vez de fijar la lista aqui.
+        cargadoresModpack: r[0].filter(function (x) {
+          return (x.supported_project_types || []).indexOf('modpack') !== -1;
+        }).map(function (x) { return x.name; }),
         versiones: r[1].filter(function (x) { return x.version_type === 'release'; })
                        .map(function (x) { return x.version; })
       };
       memoria.set('tags', v);
-      guardarLocal('gm:tags', v);
+      guardarLocal('gm:tags2', v);
       return v;
     });
   }
@@ -370,6 +382,28 @@
     return pedirCacheado('ver:' + id + ':' + cargador + ':' + version, url, 'json');
   }
 
+  /* Versiones de un MODPACK. Es una funcion aparte de versionesDeProyecto() por
+     un fallo verificado de la API: en /project/{id}/version el parametro
+     `loaders` SE IGNORA cuando el proyecto es de tipo modpack.
+
+     Comprobado contra la API real: pedir the-pixelmon-modpack en 1.21.1 con
+     loaders=["neoforge"], ["fabric"] o incluso ["bogusloader"] devuelve las
+     mismas 19 versiones en los tres casos. Con un mod de verdad el filtro si
+     funciona: sodium en 1.21.1 devuelve 22 con fabric, 20 con neoforge y 0 con
+     el cargador inventado.
+
+     Consecuencia: aqui solo se filtra por version de Minecraft, y el cargador
+     TIENE que filtrarse en el cliente mirando el array `loaders` de cada
+     version. Sin ese filtro la pagina daria por bueno un modpack de NeoForge
+     para una eleccion de Fabric. No es hipotetico: fresh-smooth publica dos
+     versiones distintas con el mismo numero, 1.5.0, una de cada cargador. */
+  function versionesDeModpack(id, version) {
+    var url = BASES.modrinth + '/project/' + encodeURIComponent(id) + '/version'
+      + '?game_versions=' + encodeURIComponent(JSON.stringify([version]))
+      + '&include_changelog=false';
+    return pedirCacheado('vermp:' + id + ':' + version, url, 'json');
+  }
+
   // Varios proyectos de una sola peticion, para resolver nombres de
   // dependencias sin gastar una llamada por cada una.
   function proyectosPorId(ids) {
@@ -397,6 +431,7 @@
     etiquetasModrinth: etiquetasModrinth,
     buscarProyectos: buscarProyectos,
     versionesDeProyecto: versionesDeProyecto,
+    versionesDeModpack: versionesDeModpack,
     proyectosPorId: proyectosPorId
   };
 })(window);

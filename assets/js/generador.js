@@ -87,14 +87,23 @@
     var L = [];
     var esMods = cfg.cargador.modrinthTipo === 'mod';
     var palabra = cfg.cargador.palabra || 'mods';
+    var mp = cfg.modpack || null;
 
     L.push('# ' + '='.repeat(74));
-    L.push('# Servidor de Minecraft ' + cfg.version + ' con ' + cfg.cargador.nombre);
+    if (mp) {
+      L.push('# Servidor de Minecraft ' + cfg.version + ' con el modpack ' + textoPlano(mp.nombre));
+    } else {
+      L.push('# Servidor de Minecraft ' + cfg.version + ' con ' + cfg.cargador.nombre);
+    }
     L.push('# Generado por https://originservers.github.io/');
     L.push('#');
     L.push('# Este archivo no contiene ningun archivo con derechos de autor: la imagen');
-    L.push('# descarga el servidor' + (cfg.mods.length ? ', el cargador y los ' + palabra : ' y el cargador') +
-           ' en el primer arranque,');
+    if (mp) {
+      L.push('# descarga el modpack, el cargador y todos sus mods en el primer arranque,');
+    } else {
+      L.push('# descarga el servidor' + (cfg.mods.length ? ', el cargador y los ' + palabra : ' y el cargador') +
+             ' en el primer arranque,');
+    }
     L.push('# desde las fuentes oficiales de cada proyecto.');
     L.push('#');
     L.push('# Al usar esta configuracion aceptas el contrato de licencia de Minecraft:');
@@ -126,16 +135,60 @@
     L.push('      # no lo aceptas, ponlo en FALSE ahi y el servidor no arrancara.');
     L.push('      EULA: ' + esc('${EULA:-TRUE}'));
     L.push('');
-    L.push('      TYPE: ' + esc(cfg.tipo));
-    L.push('      VERSION: ' + esc(cfg.version));
 
-    if (cfg.avisoCargador) {
-      L.push('      # ' + cfg.avisoCargador);
+    if (mp) {
+      /* Rama de modpack. Lo que NO se escribe aqui importa tanto como lo que si:
+
+         - No se escribe TYPE. La imagen lo trae como VANILLA de fabrica, y su
+           script start-configuration avisa ("Avoid setting TYPE and
+           MODPACK_PLATFORM") en cuanto TYPE vale otra cosa junto a un modpack.
+           Peor aun: con un modpack, TYPE deja de significar cargador. Un
+           TYPE: FABRIC al lado de un modpack de NeoForge no da error, se
+           ignora, y deja al usuario convencido de que eligio Fabric.
+         - No se escribe VERSION. La imagen la convierte en --game-version, que
+           es un filtro de BUSQUEDA sobre las versiones publicadas del modpack,
+           no un ajuste del servidor. Si el filtro no casa con ninguna, el
+           contenedor falla al arrancar. Abajo se fija la version exacta, que
+           hace ese filtro innecesario.
+         - No se escribe MODRINTH_LOADER, por lo mismo: es otro filtro, y su
+           documentacion solo admite forge, fabric y quilt (NeoForge no
+           aparece), asi que escribirlo solo puede restar. */
+      L.push('      # ---- Modpack ----');
+      L.push('      # El modpack manda: la version de Minecraft y el cargador salen de dentro');
+      L.push('      # del propio archivo .mrpack, no de aqui. Por eso no se escriben TYPE ni');
+      L.push('      # VERSION: serian filtros de busqueda y, si no casaran con lo que el');
+      L.push('      # modpack publica, el contenedor fallaria al arrancar.');
+      L.push('      MODPACK_PLATFORM: ' + esc('MODRINTH'));
+      L.push('      MODRINTH_MODPACK: ' + esc(slugParaYaml(mp.slug)));
+      L.push('      # Version exacta, fijada por identificador. Esta pagina comprobo contra la');
+      L.push('      # API de Modrinth que ese archivo existe para ' + textoPlano(mp.cargadorNombre) +
+             ' y Minecraft ' + textoPlano(mp.minecraft) + ':');
+      L.push('      # es ' + textoPlano(mp.versionNumero) + '. Si prefieres que se actualice solo,');
+      L.push('      # borra esta linea; a cambio pierdes la garantia de que la combinacion casa.');
+      L.push('      MODRINTH_VERSION: ' + esc(slugParaYaml(mp.versionId)));
+      if (!mp.estable) {
+        L.push('      # La version fijada no es estable, asi que hay que permitir su canal.');
+        L.push('      MODRINTH_MODPACK_VERSION_TYPE: ' + esc(mp.versionTipo));
+      }
+      L.push('');
+    } else {
+      L.push('      TYPE: ' + esc(cfg.tipo));
+      L.push('      VERSION: ' + esc(cfg.version));
+
+      if (cfg.avisoCargador) {
+        L.push('      # ' + cfg.avisoCargador);
+      }
+      L.push('      # La version del cargador la resuelve la imagen sola. Fijarla a mano es');
+      L.push('      # la causa mas comun de que un servidor no arranque.');
+      L.push('');
     }
-    L.push('      # La version del cargador la resuelve la imagen sola. Fijarla a mano es');
-    L.push('      # la causa mas comun de que un servidor no arranque.');
-    L.push('');
     L.push('      # Memoria del monton de Java. Deja siempre unos 2 GB libres para el sistema.');
+    if (mp) {
+      L.push('      # La documentacion de la imagen recomienda al menos 4G para cualquier');
+      L.push('      # modpack, porque el valor de fabrica es 1G y no le basta a ninguno.');
+      L.push('      # Cuanta hace falta EXACTAMENTE para este modpack no lo dice nadie: la API');
+      L.push('      # de Modrinth no publica ningun dato de memoria. Subelo si va a tirones.');
+    }
     L.push('      MEMORY: ' + esc('${MEMORIA:-' + cfg.memoria + '}'));
     if (cfg.aikar) {
       L.push('      # Ajustes del recolector de basura documentados por PaperMC:');
@@ -178,7 +231,10 @@
       L.push('      RCON_PASSWORD: ' + esc('${RCON_PASSWORD:?falta RCON_PASSWORD en el archivo .env}'));
     }
 
-    if (cfg.mods.length) {
+    // Con un modpack no se escribe MODRINTH_PROJECTS: el .mrpack ya trae su
+    // propia lista de mods, y anadir mas encima mezcla versiones que no tienen
+    // por que casar entre si. La interfaz ya impide elegir las dos cosas.
+    if (!mp && cfg.mods.length) {
       L.push('');
       L.push('      # ---- ' + (esMods ? 'Mods' : 'Plugins') + ' ----');
       L.push('      # La imagen los busca y los descarga de Modrinth en cada arranque,');
@@ -212,8 +268,12 @@
     L.push('');
     L.push('    healthcheck:');
     L.push('      test: [' + esc('CMD') + ', ' + esc('mc-health') + ']');
-    L.push('      # El primer arranque descarga el servidor' + (cfg.mods.length ? ' y los ' + palabra : '') + ' y puede tardar mucho.');
-    L.push('      start_period: ' + esc(cfg.mods.length ? '10m' : '3m'));
+    L.push('      # El primer arranque descarga el servidor' +
+           (mp ? ', el modpack entero y todos sus mods' : (cfg.mods.length ? ' y los ' + palabra : '')) +
+           ' y puede tardar mucho.');
+    // Un modpack son cientos de archivos: el margen de un servidor pelado
+    // marcaria el contenedor como enfermo antes de que termine de instalar.
+    L.push('      start_period: ' + esc(mp ? '20m' : (cfg.mods.length ? '10m' : '3m')));
     L.push('      interval: ' + esc('30s'));
     L.push('      timeout: ' + esc('20s'));
     L.push('      retries: 10');
@@ -277,10 +337,16 @@
     L.push('# ---- Memoria ----');
     L.push('# Monton de Java. Sube esto si el servidor va a tirones con muchos mods,');
     L.push('# pero nunca por encima de la memoria fisica menos 2 GB.');
+    if (cfg.modpack) {
+      L.push('# La documentacion de la imagen recomienda 4G como minimo para un modpack.');
+      L.push('# Cuanta necesita este en concreto no lo publica nadie: no es un dato que');
+      L.push('# exista en la API de Modrinth. Si va a tirones, sube de gigabyte en gigabyte.');
+    }
     L.push('MEMORIA=' + cfg.memoria);
     L.push('');
     L.push('# ---- Zona horaria ----');
-    L.push('# Para que la hora de los registros coincida con la tuya.');
+    L.push('# Para que la hora de los registros coincida con la tuya. Es un nombre de zona');
+    L.push('# IANA (region/ciudad); fija el reloj DENTRO del contenedor y nada mas.');
     L.push('ZONA_HORARIA=' + cfg.zonaHoraria);
 
     if (cfg.copias) {
@@ -344,6 +410,103 @@
       L.push('ls -lh copias/');
     }
 
+    L.push('');
+    return L.join('\n');
+  }
+
+  /* -------------------------------- LEEME.txt ------------------------------ */
+
+  /* El tercer archivo del ZIP. El docker-compose.yml y el .env se explican
+     solos con sus comentarios, pero un ZIP se abre muchas veces dias despues
+     de generarlo, cuando ya no se recuerda de donde salio ni que se eligio.
+     Este archivo responde a eso y repite los comandos, para no tener que
+     volver a la pagina. */
+  function construirLeeme(cfg) {
+    var L = [];
+    var mp = cfg.modpack || null;
+    var raya = '='.repeat(74);
+
+    L.push(raya);
+    L.push('  SERVIDOR DE MINECRAFT - INSTRUCCIONES');
+    L.push('  Generado en https://originservers.github.io/');
+    L.push(raya);
+    L.push('');
+    L.push('Este ZIP trae tres archivos:');
+    L.push('');
+    L.push('  docker-compose.yml   La definicion del servidor. Va comentado linea a linea.');
+    L.push('  .env                 Tus valores: puerto, memoria, zona horaria y contrasenas.');
+    L.push('  LEEME.txt            Este archivo.');
+    L.push('');
+    L.push('Descomprimelos los tres JUNTOS en una carpeta vacia. El docker-compose.yml lee');
+    L.push('el .env del mismo directorio, asi que separarlos rompe la configuracion.');
+    L.push('');
+    L.push(raya);
+    L.push('  LO QUE ELEGISTE');
+    L.push(raya);
+    L.push('');
+    L.push('  Minecraft:        ' + cfg.version);
+    L.push('  Cargador:         ' + cfg.cargador.nombre);
+    L.push('  Imagen de Docker: itzg/minecraft-server:' + cfg.etiquetaJava);
+    L.push('  Por que ese Java: ' + textoPlano(cfg.javaMotivo));
+    L.push('  Memoria:          ' + cfg.memoria);
+    L.push('  Puerto:           ' + cfg.puerto);
+    L.push('  Zona horaria:     ' + cfg.zonaHoraria);
+
+    if (mp) {
+      L.push('');
+      L.push('  Modpack:          ' + textoPlano(mp.nombre) + '  (' + slugSeguro(mp.slug) + ')');
+      L.push('  Version fijada:   ' + textoPlano(mp.versionNumero) + '   id ' + slugSeguro(mp.versionId));
+      L.push('');
+      L.push('  La version del modpack va fijada por identificador a proposito. Esta pagina');
+      L.push('  comprobo contra la API de Modrinth que ese archivo existe para ' + textoPlano(mp.cargadorNombre));
+      L.push('  y Minecraft ' + textoPlano(mp.minecraft) + ', asi que el modpack no puede quedar');
+      L.push('  descolocado respecto del cargador. A cambio no se actualiza solo: para eso hay');
+      L.push('  que borrar la linea MODRINTH_VERSION del docker-compose.yml.');
+      if (mp.exigeCliente) {
+        L.push('');
+        L.push('  IMPORTANTE: cada jugador tiene que instalar este mismo modpack en su');
+        L.push('  lanzador para poder entrar. Un modpack no es solo cosa del servidor.');
+      }
+    } else if (cfg.mods.length) {
+      var titulo = cfg.cargador.modrinthTipo === 'plugin' ? 'Plugins' : 'Mods';
+      L.push('');
+      L.push('  ' + titulo + ' (' + cfg.mods.length + '):');
+      cfg.mods.forEach(function (m) {
+        L.push('    - ' + slugSeguro(m.slug) + '   ' + textoPlano(m.nombre));
+      });
+    }
+
+    L.push('');
+    L.push(raya);
+    L.push('  ANTES DE EMPEZAR');
+    L.push(raya);
+    L.push('');
+    L.push('Hace falta Docker con el complemento Compose:  https://docs.docker.com/get-docker/');
+    L.push('No hace falta instalar Java: va dentro de la imagen.');
+    L.push('');
+    L.push('EULA: el .env viene con EULA=TRUE. Al levantar el servidor declaras que leiste y');
+    L.push('aceptas el contrato de licencia de Minecraft (https://aka.ms/MinecraftEULA).');
+    L.push('Si no lo aceptas, cambialo a FALSE y el servidor no arrancara.');
+    L.push('');
+    L.push(raya);
+    L.push('  COMANDOS');
+    L.push(raya);
+    L.push('');
+    L.push(construirComandos(cfg).replace(/\s+$/, ''));
+    L.push('');
+    L.push(raya);
+    L.push('  AVISOS');
+    L.push(raya);
+    L.push('');
+    L.push('Minecraft es una marca registrada de Mojang Synergies AB y Microsoft. La pagina');
+    L.push('que genero estos archivos no esta afiliada ni respaldada por Mojang, Microsoft,');
+    L.push('Modrinth, itzg, PaperMC, PurpurMC, MinecraftForge, NeoForged, FabricMC ni QuiltMC.');
+    L.push('');
+    L.push('Aqui no hay ningun archivo con derechos de autor: esto es texto de configuracion.');
+    L.push('El servidor, el cargador y los mods los descarga tu propio contenedor en el');
+    L.push('primer arranque, desde las fuentes oficiales de cada proyecto.');
+    L.push('');
+    L.push('No subas el .env a un repositorio publico: ahi viven tus contrasenas.');
     L.push('');
     return L.join('\n');
   }
@@ -444,6 +607,7 @@
     construirCompose: construirCompose,
     construirEnv: construirEnv,
     construirComandos: construirComandos,
+    construirLeeme: construirLeeme,
     resaltarYaml: resaltarYaml,
     resaltarShell: resaltarShell
   };

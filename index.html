@@ -140,6 +140,33 @@
     </div>
 
     <div id="bloque-mods" hidden>
+
+      <fieldset class="campo campo--fieldset">
+        <legend class="campo__etiqueta">Que quieres instalar</legend>
+        <p class="campo__ayuda" id="ayuda-modo">
+          Las dos formas no se mezclan: un modpack ya trae dentro su propia lista de mods,
+          y anadir mas encima mezcla versiones que no tienen por que casar entre si.
+        </p>
+        <div class="selector-modo" id="selector-modo" role="radiogroup" aria-describedby="ayuda-modo">
+          <label class="modo">
+            <input type="radio" name="modo-contenido" value="mods" checked>
+            <span class="modo__cuerpo">
+              <span class="modo__nombre">Mods sueltos</span>
+              <span class="modo__desc">Eliges tu uno a uno lo que quieres. La imagen los descarga de Modrinth en cada arranque.</span>
+            </span>
+          </label>
+          <label class="modo">
+            <input type="radio" name="modo-contenido" value="modpack">
+            <span class="modo__cuerpo">
+              <span class="modo__nombre">Modpack completo</span>
+              <span class="modo__desc">Un paquete ya armado por otra persona, con sus mods y su configuracion. Se instala entero.</span>
+            </span>
+          </label>
+        </div>
+      </fieldset>
+
+      <!-- ------------------------- Modo: mods sueltos ------------------------- -->
+      <div id="panel-mods">
       <div class="campo">
         <label class="campo__etiqueta" for="busqueda-mods">Buscar por nombre</label>
         <p class="campo__ayuda" id="ayuda-busqueda">
@@ -167,6 +194,62 @@
           Todavia no elegiste ningun mod. El servidor se generara sin mods.
         </li>
       </ul>
+      </div><!-- /panel-mods -->
+
+      <!-- ------------------------ Modo: modpack completo ---------------------- -->
+      <div id="panel-modpacks" hidden>
+
+        <div class="aviso" role="note" id="modpacks-no-admite" hidden>
+          <svg class="aviso__icono" aria-hidden="true" focusable="false"><use href="#i-info"></use></svg>
+          <div id="modpacks-no-admite-texto"></div>
+        </div>
+
+        <div id="panel-busqueda-modpacks">
+          <div class="campo">
+            <label class="campo__etiqueta" for="busqueda-modpacks">Buscar modpack por nombre</label>
+            <p class="campo__ayuda" id="ayuda-busqueda-modpacks">
+              Ya filtrado por la version y el cargador del paso 1. Los modpacks que solo
+              sirven en el cliente (los de graficos o rendimiento) aparecen marcados y no
+              se pueden elegir.
+            </p>
+            <div class="campo-busqueda">
+              <svg class="campo-busqueda__icono" aria-hidden="true" focusable="false"><use href="#i-buscar"></use></svg>
+              <input type="search" id="busqueda-modpacks" class="control control--busqueda" autocomplete="off"
+                     placeholder="Por ejemplo: Better MC, Cobblemon, Create" aria-describedby="ayuda-busqueda-modpacks">
+            </div>
+          </div>
+
+          <div id="resultados-modpacks" class="resultados" aria-live="polite" aria-busy="false"></div>
+          <div id="paginacion-modpacks" class="paginacion" hidden>
+            <button type="button" class="boton boton--secundario" id="mas-modpacks">Ver mas resultados</button>
+            <p class="paginacion__cuenta" id="cuenta-modpacks"></p>
+          </div>
+        </div>
+
+        <h3 class="subtitulo">Modpack elegido</h3>
+        <div id="elegido-modpack"></div>
+
+        <div class="aviso aviso--atencion" role="note" id="resumen-modpack" hidden>
+          <svg class="aviso__icono" aria-hidden="true" focusable="false"><use href="#i-aviso"></use></svg>
+          <div>
+            <p><strong>Sube la memoria antes de arrancar.</strong></p>
+            <p>
+              La documentacion de la imagen <code>itzg/minecraft-server</code> recomienda poner
+              <code>MEMORY</code> en <strong>4 GB como minimo</strong> para cualquier modpack,
+              porque el valor de fabrica es 1 GB y no le basta a ninguno. Al elegir modpack,
+              el paso 3 sube a 4 GB si lo tenias por debajo.
+            </p>
+            <p>
+              <strong>Cuanta memoria necesita este modpack en concreto, esta pagina no lo sabe.</strong>
+              La API de Modrinth no publica ningun dato de memoria: no existe ese campo ni en el
+              proyecto, ni en la version, ni en el buscador. Cualquier cifra exacta por modpack que
+              vieras aqui estaria inventada. Si el servidor va a tirones, sube de gigabyte en
+              gigabyte, y mira lo que diga el autor del modpack en su pagina.
+            </p>
+          </div>
+        </div>
+      </div><!-- /panel-modpacks -->
+
     </div>
   </section>
 
@@ -255,10 +338,25 @@
         <input type="text" id="mundo" class="control" value="world" maxlength="60">
       </div>
 
-      <div class="campo">
+      <div class="campo campo--ancho">
         <label class="campo__etiqueta" for="zona-horaria">Zona horaria</label>
-        <p class="campo__ayuda">Para que la hora de los registros coincida con la tuya.</p>
-        <input type="text" id="zona-horaria" class="control" value="UTC" maxlength="60">
+        <p class="campo__ayuda" id="ayuda-zona">
+          Fija el reloj dentro del contenedor, para que la hora de los registros y de las
+          tareas programadas coincida con la tuya. La lista es la base de datos IANA que
+          trae tu propio navegador.
+        </p>
+        <div class="campo-zona">
+          <div class="campo-busqueda">
+            <svg class="campo-busqueda__icono" aria-hidden="true" focusable="false"><use href="#i-buscar"></use></svg>
+            <input type="search" id="filtro-zona" class="control control--busqueda" autocomplete="off"
+                   placeholder="Escribe para filtrar: Guatemala, Madrid, Bogota..."
+                   aria-label="Filtrar la lista de zonas horarias"
+                   aria-describedby="cuenta-zonas">
+          </div>
+          <select id="zona-horaria" class="control" aria-describedby="ayuda-zona nota-zona"></select>
+        </div>
+        <p class="campo__nota" id="cuenta-zonas" aria-live="polite"></p>
+        <p class="campo__nota" id="nota-zona"></p>
       </div>
 
       <div class="campo campo--ancho">
@@ -322,6 +420,21 @@
           y el servidor no arrancara.
         </p>
       </div>
+    </div>
+
+    <div class="descarga-todo">
+      <div>
+        <h3 class="subtitulo">Llevatelo todo de una vez</h3>
+        <p>
+          Un ZIP con el <code>docker-compose.yml</code>, el <code>.env</code> y un
+          <code>LEEME.txt</code> con los comandos y lo que elegiste. Descomprimelo en una
+          carpeta vacia y ya puedes arrancar.
+        </p>
+      </div>
+      <button type="button" class="boton boton--grande" id="descargar-zip">
+        <svg aria-hidden="true" focusable="false"><use href="#i-descargar"></use></svg>
+        Descargar ZIP
+      </button>
     </div>
 
     <div class="salida">
@@ -447,8 +560,10 @@
 
 <script src="assets/js/api.js"></script>
 <script src="assets/js/compat.js"></script>
+<script src="assets/js/zip.js"></script>
 <script src="assets/js/generador.js"></script>
 <script src="assets/js/mods.js"></script>
+<script src="assets/js/modpacks.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>

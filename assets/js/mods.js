@@ -528,6 +528,10 @@
     iniciar: iniciar,
     configurar: configurar,
     buscar: buscar,
+    // La reutiliza modpacks.js. Sirve para las dos formas en que Modrinth
+    // devuelve este dato: un ARRAY en los resultados del buscador y una CADENA
+    // en el endpoint de versiones. La funcion ya normaliza las dos.
+    evaluarEntorno: evaluarEntorno,
     elegidos: function () { return Array.from(estado.elegidos.values()); },
     limpiar: function () { estado.elegidos.clear(); pintarElegidos(); revisarRelaciones(); }
   };

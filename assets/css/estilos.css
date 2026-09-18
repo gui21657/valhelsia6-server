@@ -707,6 +707,104 @@ select.control {
 .error-404 p { color: var(--texto-suave); max-width: 52ch; margin: 0 auto 1.2rem; }
 .error-404 .marca { justify-content: center; }
 
+/* --------------------- Selector de mods contra modpack -------------------- */
+/* Mismo patron visual que las tarjetas de cargador: el radio de verdad sigue
+   ahi, solo que oculto, asi que el teclado y los lectores de pantalla lo
+   recorren como cualquier grupo de radios. */
+.selector-modo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: .7rem;
+}
+.modo {
+  position: relative;
+  display: block;
+  border: 2px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  padding: .85rem .9rem;
+  cursor: pointer;
+}
+.modo:hover { border-color: var(--acento); }
+.modo input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.modo:has(input:checked) {
+  border-color: var(--acento);
+  background: var(--acento-claro);
+}
+.modo:has(input:focus-visible) {
+  outline: 3px solid var(--acento);
+  outline-offset: 2px;
+}
+.modo__cuerpo { display: block; }
+.modo__nombre { display: block; font-weight: 700; }
+.modo__desc {
+  display: block;
+  margin-top: .25rem;
+  font-size: .85rem;
+  color: var(--texto-suave);
+}
+
+/* ----------------------------- Modpack elegido ---------------------------- */
+.modpack-elegido {
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  padding: .9rem 1rem;
+}
+.modpack-elegido__cabecera {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  margin-bottom: .7rem;
+}
+.modpack-elegido__cabecera .elegido__icono { width: 2.6rem; height: 2.6rem; }
+.modpack-elegido dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: .3rem .9rem;
+  margin: 0;
+  font-size: .92rem;
+}
+.modpack-elegido dt { color: var(--texto-suave); }
+.modpack-elegido dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+
+/* ------------------------------ Zona horaria ------------------------------ */
+/* El filtro va encima del desplegable: con mas de 400 zonas, la busqueda por
+   primera letra que trae el navegador no basta para encontrar nada. */
+.campo-zona { display: grid; gap: .5rem; }
+
+/* ----------------------------- Descargar todo ----------------------------- */
+.descarga-todo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 0 0 1.4rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--acento);
+  border-radius: var(--radio);
+  background: var(--acento-claro);
+}
+.descarga-todo .subtitulo { margin-top: 0; }
+.descarga-todo p {
+  margin: .3rem 0 0;
+  font-size: .9rem;
+  color: var(--texto-suave);
+  max-width: 54ch;
+}
+.boton--grande {
+  font-size: 1rem;
+  padding: .7rem 1.2rem;
+  min-height: 2.9rem;
+  flex: 0 0 auto;
+}
+
 /* ------------------------- Pantallas estrechas ---------------------------- */
 @media (max-width: 40rem) {
   .paso { padding: 1.1rem; border-radius: 8px; }
@@ -723,4 +821,8 @@ select.control {
   .codigo { font-size: .8rem; padding: .8rem; }
   .resumen-eleccion dl { grid-template-columns: 1fr; gap: 0 0; }
   .resumen-eleccion dd { margin-bottom: .45rem; }
+  .modpack-elegido dl { grid-template-columns: 1fr; gap: 0 0; }
+  .modpack-elegido dd { margin-bottom: .45rem; }
+  .descarga-todo { flex-direction: column; align-items: stretch; }
+  .descarga-todo .boton--grande { width: 100%; justify-content: center; }
 }

@@ -8,6 +8,7 @@
   var compat = global.GM.compat;
   var gen = global.GM.generador;
   var mods = global.GM.mods;
+  var modpacks = global.GM.modpacks;
 
   var $ = function (id) { return document.getElementById(id); };
 
@@ -24,6 +25,7 @@
   var ultimos = { compose: '', env: '', comandos: '' };
   var rconPassword = gen.aleatorio(20);
   var temporizadorBusqueda = null;
+  var temporizadorModpacks = null;
 
   /* ------------------------------ Utilidades ------------------------------- */
 
@@ -45,14 +47,171 @@
     return v;
   }
 
+  /* ------------------------------ Zona horaria ----------------------------- */
+
+  /* Lista corta de reserva. Solo se usa si el navegador no trae
+     Intl.supportedValuesOf, que es el unico modo de obtener la lista IANA
+     completa sin escribirla a mano ni descargarla de ningun sitio. Son zonas
+     reales de la base de datos IANA; la lista es corta a proposito, porque una
+     copia parcial escrita a mano envejece y no hay forma de mantenerla al dia
+     desde una pagina estatica. El desplegable NUNCA se queda vacio: en el peor
+     caso quedan estas y la opcion automatica, que casi siempre acierta. */
+  var ZONAS_RESERVA = [
+    'UTC',
+    'America/Guatemala', 'America/Mexico_City', 'America/Bogota', 'America/Lima',
+    'America/Santiago', 'America/Argentina/Buenos_Aires', 'America/Sao_Paulo',
+    'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+    'Europe/Madrid', 'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Moscow',
+    'Africa/Lagos', 'Africa/Johannesburg', 'Africa/Cairo',
+    'Asia/Jerusalem', 'Asia/Dubai', 'Asia/Kolkata', 'Asia/Shanghai', 'Asia/Tokyo',
+    'Australia/Sydney', 'Pacific/Auckland'
+  ];
+
+  var zonaDetectada = null;     // lo que declara el navegador, o null
+  var zonasDisponibles = [];    // lista completa ya ordenada
+  var zonaElegida = 'auto';     // 'auto' o un nombre IANA concreto
+
+  /* La zona del navegador se obtiene al instante y sin salir a la red: la
+     calcula el propio motor de JavaScript a partir de la configuracion del
+     sistema. No se consulta ninguna API de geolocalizacion ni se mide latencia
+     a ningun servidor, por tres motivos: seria mas lento, seria menos exacto
+     (la ruta de red no dice en que zona horaria vive nadie) y obligaria a
+     entregar la direccion IP del usuario a un tercero. */
+  function detectarZona() {
+    try {
+      var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (tz && typeof tz === 'string') return tz;
+    } catch (e) { /* motor sin datos de zona */ }
+    return null;
+  }
+
+  function listaDeZonas() {
+    try {
+      if (typeof Intl.supportedValuesOf === 'function') {
+        var l = Intl.supportedValuesOf('timeZone');
+        if (l && l.length) {
+          var copia = l.slice();
+          // supportedValuesOf no incluye UTC en todos los motores, y es el
+          // valor de reserva del generador: tiene que poder elegirse.
+          if (copia.indexOf('UTC') === -1) copia.push('UTC');
+          return copia.sort();
+        }
+      }
+    } catch (e) { /* navegador sin soporte */ }
+    return ZONAS_RESERVA.slice().sort();
+  }
+
+  // El valor que acaba en el .env: siempre una zona IANA de verdad. El
+  // contenedor no entiende la palabra "auto".
+  function zonaResuelta() {
+    if (zonaElegida !== 'auto') return zonaElegida;
+    return zonaDetectada || 'UTC';
+  }
+
+  function etiquetaAutomatica() {
+    return zonaDetectada
+      ? 'Automatica - detectada: ' + zonaDetectada
+      : 'Automatica - no se pudo detectar, se usara UTC';
+  }
+
+  /* Rellena el desplegable. Con mas de 400 entradas hace falta poder escribir
+     para filtrar, asi que el campo de arriba recorta la lista y esta funcion la
+     vuelve a pintar. La opcion automatica y la que este elegida sobreviven
+     siempre al filtro: si el filtro las escondiera, cambiar de texto cambiaria
+     la configuracion sin que el usuario tocara el desplegable. */
+  function pintarZonas(filtro) {
+    var sel = $('zona-horaria');
+    var texto = (filtro || '').trim().toLowerCase();
+    vaciar(sel);
+
+    var auto = crear('option', null, etiquetaAutomatica());
+    auto.value = 'auto';
+    sel.appendChild(auto);
+
+    var coincidencias = !texto ? zonasDisponibles : zonasDisponibles.filter(function (z) {
+      // Se busca tambien con los guiones bajos como espacios, para que
+      // "buenos aires" encuentre America/Argentina/Buenos_Aires.
+      return z.toLowerCase().indexOf(texto) !== -1 ||
+             z.toLowerCase().replace(/_/g, ' ').indexOf(texto) !== -1;
+    });
+
+    // La elegida no puede desaparecer por culpa del filtro.
+    if (zonaElegida !== 'auto' && coincidencias.indexOf(zonaElegida) === -1) {
+      var grupoElegida = document.createElement('optgroup');
+      grupoElegida.label = 'Elegida';
+      var oe = crear('option', null, zonaElegida);
+      oe.value = zonaElegida;
+      grupoElegida.appendChild(oe);
+      sel.appendChild(grupoElegida);
+    }
+
+    if (coincidencias.length) {
+      var grupo = document.createElement('optgroup');
+      grupo.label = texto
+        ? 'Coincidencias (' + coincidencias.length + ')'
+        : 'Todas las zonas (' + coincidencias.length + ')';
+      coincidencias.forEach(function (z) {
+        var o = crear('option', null, z.replace(/_/g, ' '));
+        o.value = z;
+        grupo.appendChild(o);
+      });
+      sel.appendChild(grupo);
+    }
+
+    sel.value = zonaElegida;
+    // Si el navegador rechazo el valor (no existe entre las opciones), se cae a
+    // automatica en vez de quedarse con el desplegable en blanco.
+    if (!sel.value) { zonaElegida = 'auto'; sel.value = 'auto'; }
+
+    var cuenta = $('cuenta-zonas');
+    if (texto) {
+      cuenta.textContent = coincidencias.length
+        ? coincidencias.length + (coincidencias.length === 1 ? ' zona coincide con "' : ' zonas coinciden con "') + filtro.trim() + '".'
+        : 'Ninguna zona coincide con "' + filtro.trim() + '". Borra el filtro para ver la lista entera.';
+    } else {
+      cuenta.textContent = zonasDisponibles.length + ' zonas horarias disponibles.';
+    }
+  }
+
+  function notaDeZona() {
+    var n = $('nota-zona');
+    vaciar(n);
+    if (zonaElegida === 'auto') {
+      n.textContent = zonaDetectada
+        ? 'En el .env se escribira ' + zonaDetectada + ', que es la zona que ya declara tu ' +
+          'navegador. Se lee al instante del propio sistema: no se consulta nada por internet, ' +
+          'no se mide latencia y no se envia tu IP a ningun sitio. Ojo: la zona horaria solo ' +
+          'ajusta el reloj dentro del contenedor, no cambia donde esta alojado tu servidor ni ' +
+          'el ping de quien entre a jugar.'
+        : 'Tu navegador no declara ninguna zona horaria, asi que en el .env se escribira UTC. ' +
+          'Si quieres otra, elegila a mano en la lista.';
+    } else {
+      n.textContent = 'En el .env se escribira ' + zonaElegida + '. Solo ajusta el reloj dentro ' +
+        'del contenedor: no cambia donde esta alojado tu servidor ni el ping de quien entre a jugar.';
+    }
+  }
+
+  function prepararZonas() {
+    zonaDetectada = detectarZona();
+    zonasDisponibles = listaDeZonas();
+    zonaElegida = 'auto';       // la automatica es la opcion por defecto
+    pintarZonas('');
+    notaDeZona();
+
+    $('filtro-zona').addEventListener('input', function (e) {
+      pintarZonas(e.target.value);
+    });
+    $('zona-horaria').addEventListener('change', function (e) {
+      zonaElegida = e.target.value || 'auto';
+      notaDeZona();
+      regenerar();
+    });
+  }
+
   /* ------------------------------- Arranque -------------------------------- */
 
   function iniciar() {
-    // Zona horaria del propio navegador: mejor que inventar una por defecto.
-    try {
-      var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      if (tz) $('zona-horaria').value = tz;
-    } catch (e) { /* se queda UTC */ }
+    prepararZonas();
 
     mods.iniciar({
       resultados: $('resultados-mods'),
@@ -64,6 +223,19 @@
       dependencias: $('dependencias'),
       incompatibles: $('incompatibles'),
       busqueda: $('busqueda-mods')
+    });
+
+    modpacks.iniciar({
+      resultados: $('resultados-modpacks'),
+      paginacion: $('paginacion-modpacks'),
+      masResultados: $('mas-modpacks'),
+      cuentaResultados: $('cuenta-modpacks'),
+      busqueda: $('busqueda-modpacks'),
+      elegido: $('elegido-modpack'),
+      resumen: $('resumen-modpack'),
+      noAdmite: $('modpacks-no-admite'),
+      noAdmiteTexto: $('modpacks-no-admite-texto'),
+      panelBusqueda: $('panel-busqueda-modpacks')
     });
 
     pintarFuentes();
@@ -274,8 +446,9 @@
         'Si quieres mods, vuelve al paso 1 y elige Fabric, NeoForge, Forge o Quilt; ' +
         'si quieres plugins, elige Paper o Purpur.'));
       mods.limpiar();
+      modpacks.limpiar();
     } else {
-      mods.configurar(version, meta, regenerar);
+      aplicarModo();
     }
 
     // Java: se lee del propio JSON de Mojang para esta version concreta.
@@ -304,6 +477,47 @@
     }
 
     actualizarResumen();
+    regenerar();
+  }
+
+  /* --------------------- Mods sueltos contra modpack ----------------------- */
+
+  function modoContenido() {
+    var r = document.querySelector('input[name="modo-contenido"]:checked');
+    return r ? r.value : 'mods';
+  }
+
+  /* Solo se configura el modulo del modo activo, y se vacia el del otro. Son
+     excluyentes de verdad, no una preferencia visual: un .mrpack ya trae dentro
+     su lista de mods, y emitir ademas MODRINTH_PROJECTS anadiria mods encima
+     con versiones que no tienen por que casar con las del pack. */
+  function aplicarModo() {
+    var meta = eleccion.cargador;
+    if (!meta || !meta.modrinthCargador) return;
+
+    var esModpack = modoContenido() === 'modpack';
+    $('panel-mods').hidden = esModpack;
+    $('panel-modpacks').hidden = !esModpack;
+
+    if (esModpack) {
+      mods.limpiar();
+      modpacks.configurar(eleccion.version, meta, alCambiarModpack);
+    } else {
+      modpacks.limpiar();
+      mods.configurar(eleccion.version, meta, regenerar);
+    }
+    regenerar();
+  }
+
+  /* Al elegir modpack se sube la memoria a 4 GB si estaba por debajo. La cifra
+     no es inventada: es el minimo que recomienda la documentacion de la imagen
+     para cualquier modpack, frente al 1 GB que trae de fabrica. No se sube mas
+     porque no existe ningun dato por modpack que lo respalde. */
+  function alCambiarModpack() {
+    if (modpacks.elegido()) {
+      var m = $('memoria');
+      if (entero(m, 4) < 4) m.value = '4';
+    }
     regenerar();
   }
 
@@ -344,9 +558,11 @@
   function conectarFormulario() {
     $('version').addEventListener('change', alCambiarVersion);
 
+    // La zona horaria no entra aqui: tiene su propio escuchador en
+    // prepararZonas(), que ademas actualiza la nota antes de regenerar.
     var campos = ['memoria', 'dificultad', 'modo-juego', 'max-jugadores', 'motd',
                   'distancia-vision', 'distancia-simulacion', 'puerto', 'mundo',
-                  'zona-horaria', 'operadores', 'modo-online', 'flags-aikar',
+                  'operadores', 'modo-online', 'flags-aikar',
                   'copias', 'deps-modrinth'];
     campos.forEach(function (id) {
       var n = $(id);
@@ -364,6 +580,21 @@
       temporizadorBusqueda = setTimeout(function () { mods.buscar(texto, false); }, 400);
     });
 
+    // Mismo retraso y mismo motivo para los modpacks: son peticiones a la misma
+    // API, con el mismo limite de 300 por minuto y por IP.
+    $('busqueda-modpacks').addEventListener('input', function (e) {
+      clearTimeout(temporizadorModpacks);
+      var texto = e.target.value.trim();
+      if (texto.length === 1) return;
+      temporizadorModpacks = setTimeout(function () { modpacks.buscar(texto, false); }, 400);
+    });
+
+    document.querySelectorAll('input[name="modo-contenido"]').forEach(function (r) {
+      r.addEventListener('change', function () { if (r.checked) aplicarModo(); });
+    });
+
+    $('descargar-zip').addEventListener('click', descargarZip);
+
     document.querySelectorAll('[data-copiar]').forEach(function (b) {
       b.addEventListener('click', function () { copiar(b.dataset.copiar); });
     });
@@ -375,8 +606,12 @@
   }
 
   function reunirConfiguracion() {
-    var lista = mods.elegidos();
+    // Con un modpack elegido, la lista de mods sueltos no viaja al generador
+    // aunque quedara algo dentro: son ramas excluyentes.
+    var mp = modoContenido() === 'modpack' ? modpacks.elegido() : null;
+    var lista = mp ? [] : mods.elegidos();
     return {
+      modpack: mp,
       version: eleccion.version,
       cargador: eleccion.cargador,
       tipo: eleccion.cargador.id,
@@ -393,7 +628,8 @@
       distanciaSimulacion: entero($('distancia-simulacion'), 10),
       puerto: entero($('puerto'), 25565),
       mundo: $('mundo').value.trim() || 'world',
-      zonaHoraria: $('zona-horaria').value.trim() || 'UTC',
+      // Nunca la palabra "auto": el contenedor necesita una zona IANA de verdad.
+      zonaHoraria: zonaResuelta(),
       operadores: $('operadores').value.trim(),
       modoOnline: $('modo-online').checked,
       aikar: $('flags-aikar').checked,
@@ -429,6 +665,17 @@
   function notaDeMemoria(cfg) {
     var n = cfg.mods.length;
     var texto;
+    if (cfg.modpack) {
+      // Lo unico con fuente publicada es el minimo de 4 GB de la documentacion
+      // de la imagen. Una tabla de memoria por modpack seria inventada: ese
+      // dato no existe en la API de Modrinth.
+      $('nota-memoria').textContent =
+        'La documentacion de la imagen recomienda 4 GB como minimo para cualquier modpack, ' +
+        'porque el valor de fabrica es 1 GB. Cuanta necesita ' + cfg.modpack.nombre +
+        ' en concreto no lo dice ninguna fuente que esta pagina pueda consultar: la API de ' +
+        'Modrinth no publica ningun dato de memoria. Si va a tirones, sube de gigabyte en gigabyte.';
+      return;
+    }
     if (n === 0) {
       texto = 'Sin mods, el tutorial de servidor de minecraft.wiki habla de tener al menos 2 GB ' +
               'disponibles, y hasta 4 GB para servidores mas grandes.';
@@ -519,6 +766,52 @@
     }
   }
 
+  /* ------------------------------ Descargar ZIP ---------------------------- */
+
+  /* Los tres archivos en un solo ZIP, construido en el navegador por zip.js.
+     La descarga por script esta bloqueada en algunos navegadores y contextos
+     (un iframe sin permisos, por ejemplo) y, cuando lo esta, el clic no lanza
+     ningun error: simplemente no pasa nada. Por eso el boton lo dice, y copiar
+     al portapapeles sigue siendo el camino principal. */
+  function descargarZip() {
+    if (!ultimos.compose || !ultimos.env) return;
+
+    var boton = $('descargar-zip');
+    var cfg = reunirConfiguracion();
+    var archivos = [
+      { nombre: 'docker-compose.yml', texto: ultimos.compose },
+      { nombre: '.env', texto: ultimos.env },
+      { nombre: 'LEEME.txt', texto: gen.construirLeeme(cfg) }
+    ];
+
+    var url = null;
+    try {
+      var blob = global.GM.zip.construir(archivos);
+      url = URL.createObjectURL(blob);
+
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'servidor-minecraft-' + cfg.version + '.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      avisarCopia('ZIP generado (' + Math.max(1, Math.round(blob.size / 1024)) + ' KB). ' +
+        'Si no aparecio ninguna descarga, tu navegador la bloqueo: usa los botones de copiar.');
+    } catch (e) {
+      if (global.console && console.error) console.error('[generador] fallo al armar el ZIP', e);
+      vaciar(boton);
+      boton.textContent = 'El navegador bloqueo la descarga';
+      boton.disabled = true;
+      avisarCopia('No se pudo entregar el ZIP en este navegador. Copia los bloques de abajo ' +
+        'uno a uno: el contenido es exactamente el mismo.');
+    } finally {
+      // Revocar de inmediato cancelaria la descarga en curso; un segundo basta
+      // para que el navegador la haya tomado, y evita retener el blob en memoria.
+      if (url) setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }
+  }
+
   /* -------------------------------- Fuentes -------------------------------- */
 
   function pintarFuentes() {
@@ -532,6 +825,7 @@
       ['Compilaciones de Paper', 'fill.papermc.io (la API v2 fue retirada)'],
       ['Versiones de Purpur', 'api.purpurmc.org'],
       ['Mods y plugins', 'api.modrinth.com (API publica, sin clave)'],
+      ['Modpacks', 'api.modrinth.com, tipo de proyecto "modpack". La version concreta se confirma contra el endpoint de versiones antes de dejar elegirla.'],
       ['Imagen del servidor', 'itzg/minecraft-server, documentada en docker-minecraft-server.readthedocs.io']
     ];
     fuentes.forEach(function (f) {
