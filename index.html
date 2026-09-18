@@ -313,12 +313,13 @@
     <div class="aviso aviso--atencion" role="note">
       <svg class="aviso__icono" aria-hidden="true" focusable="false"><use href="#i-aviso"></use></svg>
       <div>
-        <p><strong>El EULA viene sin aceptar, a proposito.</strong></p>
+        <p><strong>Si continuas, aceptas el EULA de Minecraft.</strong></p>
         <p>
-          El archivo generado lleva <code>EULA=FALSE</code> y el servidor no arrancara asi.
-          Poner <code>TRUE</code> es una declaracion tuya de que leiste y aceptas el
+          La configuracion se genera con <code>EULA=TRUE</code>. Al descargarla y levantar
+          el servidor declaras que leiste y aceptas el
           <a href="https://aka.ms/MinecraftEULA" rel="noopener noreferrer" target="_blank">contrato de licencia de Minecraft</a>.
-          Esta pagina no opera ningun servidor y no puede aceptarlo por ti.
+          Si no lo aceptas, cambia ese valor a <code>FALSE</code> en el <code>.env</code>
+          y el servidor no arrancara.
         </p>
       </div>
     </div>
@@ -395,7 +396,7 @@
           <li>No descarga ni redistribuye mods, ni el jar de Minecraft, ni el cliente. Todo eso lo baja tu contenedor en el primer arranque desde las fuentes oficiales.</li>
           <li>No guarda nada tuyo: no hay cuentas, ni cookies de seguimiento, ni servidor donde guardarlo.</li>
           <li>No puede saber si dos mods chocan entre si. Eso solo se ve al arrancar.</li>
-          <li>No acepta el EULA por ti.</li>
+          <li>No opera ningun servidor: el EULA lo aceptas tu al levantar el tuyo.</li>
         </ul>
       </div>
     </div>
