@@ -1,0 +1,16 @@
+# Ejecuta una copia de seguridad del mundo. No se activa sola: la dispara
+# valhelsia-copia.timer. Ver ese archivo para la instalacion.
+
+[Unit]
+Description=Copia de seguridad del mundo de Valhelsia 6
+Documentation=https://github.com/gui21657/valhelsia6-server
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/valhelsia6-server
+ExecStart=/opt/valhelsia6-server/despliegue/copia-seguridad.sh
+
+# Cuantas copias se conservan antes de empezar a borrar las viejas.
+Environment=COPIAS_A_CONSERVAR=7

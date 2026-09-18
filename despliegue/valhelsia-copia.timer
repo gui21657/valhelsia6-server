@@ -1,0 +1,25 @@
+# Copia de seguridad automatica del mundo.
+#
+# Instalacion:
+#   sudo cp despliegue/valhelsia-copia.service /etc/systemd/system/
+#   sudo cp despliegue/valhelsia-copia.timer   /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now valhelsia-copia.timer
+#
+# Comprobar cuando toca la siguiente:
+#   systemctl list-timers valhelsia-copia.timer
+
+[Unit]
+Description=Copia diaria del mundo de Valhelsia 6
+Documentation=https://github.com/gui21657/valhelsia6-server
+
+[Timer]
+# Todos los dias a las 05:00, hora local de la maquina.
+OnCalendar=*-*-* 05:00:00
+# Si la maquina estaba apagada a esa hora, la hace al arrancar.
+Persistent=true
+# Desfase aleatorio para no coincidir con otras tareas al minuto exacto.
+RandomizedDelaySec=15m
+
+[Install]
+WantedBy=timers.target

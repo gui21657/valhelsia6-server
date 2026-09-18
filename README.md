@@ -61,11 +61,11 @@ un dato oficial del equipo de Valhelsia.**
 
 Tres reglas que evitan la mayoria de los problemas:
 
-1. **Nunca asignes al servidor mas de la mitad de la RAM fisica de la maquina.**
-   El proceso de Java consume bastante memoria por encima del heap, y el sistema
-   operativo tambien necesita la suya. Un `-Xmx` de 8 GB en una maquina de 8 GB
-   no va mas rapido: va peor, porque el sistema se pone a usar el archivo de
-   intercambio.
+1. **Deja siempre al menos 2 GB libres para el sistema.** Es la regla que sigue
+   la tabla de arriba: el heap es la RAM fisica menos 2 GB. El proceso de Java
+   consume bastante memoria por encima del heap, y el sistema operativo tambien
+   necesita la suya. Un `-Xmx` de 8 GB en una maquina de 8 GB no va mas rapido:
+   va peor, porque el sistema se pone a usar el archivo de intercambio.
 2. **Mas RAM no es siempre mejor.** Por encima de unos 12 GB de heap, el
    recolector de basura G1 que usa este pack empieza a provocar pausas largas y
    perceptibles. Si de verdad necesitas mas, hay que cambiar de configuracion de
@@ -240,6 +240,150 @@ Para quien prefiera instalarlo directamente sobre el sistema.
 
 Los scripts son idempotentes: si ya descargaron el pack o ya instalaron Forge,
 no lo repiten.
+
+---
+
+## Un servidor siempre encendido (sin depender de tu PC)
+
+Si quieres que tus amigos entren aunque tu ordenador este apagado, el servidor
+tiene que correr en una maquina que no sea el tuyo. Este apartado compara las
+vias reales y explica una que **no** funciona, porque es la que todo el mundo
+intenta primero.
+
+### Por que GitHub Actions no sirve para esto
+
+Es tentador: el repositorio ya esta en GitHub y Actions ejecuta maquinas Linux
+gratis. Pero no es viable, por tres motivos independientes, y cualquiera de
+ellos basta.
+
+**1. Lo prohiben los terminos de servicio.** No aparece la frase "servidores de
+juego" en ninguna politica de GitHub, pero hay dos clausulas que cubren el caso
+de forma directa. De los
+[GitHub Terms for Additional Products and Features](https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features),
+seccion Actions:
+
+> If using GitHub-hosted runners, any other activity unrelated to the
+> production, testing, deployment, or publication of the software project
+> associated with the repository where GitHub Actions are used.
+
+> You may only access and use GitHub Actions to develop and test your
+> application(s). Only one licensed user may access a virtual machine provided
+> by Actions at any time.
+
+Un servidor para jugar no es producir, probar, desplegar ni publicar software,
+y "un unico usuario con licencia por maquina virtual" es justo lo contrario de
+un servidor multijugador. Las consecuencias tambien estan escritas:
+
+> Misuse of GitHub Actions may result in termination of jobs, restrictions in
+> your ability to use GitHub Actions, disabling of repositories created to run
+> Actions in a way that violates these Terms, or in some cases, suspension or
+> termination of your GitHub account.
+
+Es decir: te arriesgas a perder la cuenta de GitHub. No merece la pena por un
+servidor de Minecraft.
+
+**2. Se corta cada 6 horas.** El
+[limite de ejecucion de un job](https://docs.github.com/en/actions/reference/limits)
+en un runner de GitHub es de 6 horas, y la documentacion lo marca
+explicitamente como no ampliable. La partida se cortaria de golpe como mucho
+cada 6 horas, sin apagado ordenado, con el riesgo de corromper el mundo.
+
+**3. No se puede entrar de fuera.** Los runners no tienen IP publica fija a la
+que conectarse: corren en maquinas virtuales de Azure con
+[IP dinamica que cambia en cada job](https://docs.github.com/en/actions/reference/runners/larger-runners#networking-for-larger-runners),
+y no hay forma documentada de abrir un puerto entrante. Ademas el disco es
+efimero: al acabar el job la maquina se destruye y el mundo se pierde salvo que
+lo subas a algun sitio en cada corte.
+
+Un apunte de tamano, por si aun asi tienes la duda: el runner estandar de un
+**repositorio privado** tiene 2 nucleos y 8 GB de RAM, insuficiente para los
+6-8 GB de heap que pide este pack. Los 16 GB solo los dan los repositorios
+**publicos**, lo que significa publicar tu configuracion y tu mundo.
+
+Lo mismo aplica a Codespaces y a cualquier otro entorno de CI: no son hosting.
+
+### Las vias que si funcionan
+
+Datos consultados en septiembre de 2026. **Los precios y los tiers cambian a
+menudo: reconfirmalos antes de pagar.**
+
+| Via | Coste | Siempre encendido | Pegas |
+| --- | --- | --- | --- |
+| **VPS de pago** (Hetzner CX33 y similares) | ~9 EUR/mes | Si | Lo administras tu |
+| **Oracle Cloud Always Free** | 0 EUR | Casi | ARM, capacidad, se para si esta inactivo |
+| **Hosting por horas** (exaroton) | ~0,08 EUR/hora a 8 GB | Solo mientras jugais | Pagas por uso |
+| **Hosting de Minecraft de pago** | ~8-24 USD/mes | Si | El mas caro por GB |
+| **Tu PC + el tunel** | 0 EUR | No | Depende de tu maquina |
+| ~~Aternos~~ | 0 EUR | No | **No admite este modpack** |
+
+Dos avisos concretos, porque son los que mas tiempo hacen perder:
+
+- **Aternos no vale para Valhelsia 6.** Segun su propio centro de ayuda,
+  limita cada servidor gratuito a
+  [4 GB de almacenamiento](https://support.aternos.org/hc/en-us/articles/360035144691-Maximum-allowed-server-size)
+  y
+  [no da acceso FTP ni permite subir mods o modpacks propios](https://support.aternos.org/hc/en-us/articles/360027235831-Uploading-files-and-FTP-access).
+  Un pack de ~250 mods con su mundo ni cabe ni se puede instalar. Si alguien te
+  lo recomienda para este pack, no lo ha probado. Comprobalo tu mismo antes de
+  invertir tiempo: sus paginas cambian.
+- **Oracle Always Free se recorto a la mitad.** Desde el 15 de junio de 2026 el
+  cupo de Ampere A1 es de **2 OCPU y 12 GB de RAM**, no los 4 OCPU y 24 GB que
+  siguen repitiendo casi todas las guias de internet. 12 GB todavia dan para
+  este pack, pero cuenta con tres pegas: es ARM (algun mod con librerias
+  nativas puede fallar), el error "Out of host capacity" al crear la instancia
+  es cronico, y Oracle
+  [para las instancias gratuitas inactivas](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm)
+  cuando durante 7 dias el percentil 95 de CPU, red y memoria baja del 20 %.
+  Un servidor de Minecraft vacio encaja exactamente en ese perfil. La
+  reclamacion afecta a los recursos Always Free, asi que convertir la cuenta a
+  Pay As You Go es la salida habitual; ojo, sobre que cuota conserva una cuenta
+  Pay As You Go hay informes contradictorios y el propio soporte de Oracle ha
+  dado respuestas distintas, asi que confirmalo con ellos antes de contar con
+  ello.
+
+**Para 2 a 4 jugadores**, si no quieres administrar nada y jugais por sesiones,
+el pago por horas sale muy barato. Si quereis el mundo disponible a cualquier
+hora y no os importa administrar una maquina, un VPS x86 de 8 GB por unos
+9 EUR/mes es lo mas predecible: sin ARM, sin colas y sin sorpresas.
+
+### Desplegarlo en un VPS
+
+Una vez tengas la maquina (Ubuntu o Debian), desde ella:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/gui21657/valhelsia6-server/main/despliegue/instalar-vps.sh -o instalar-vps.sh
+less instalar-vps.sh      # leelo antes de ejecutarlo como root
+sudo bash instalar-vps.sh
+```
+
+El script instala Docker, clona el repositorio en `/opt/valhelsia6-server`,
+ajusta `RAM_MAXIMA` a la RAM de la maquina, abre el puerto en el cortafuegos
+del sistema, y deja instaladas dos cosas de systemd:
+
+- `valhelsia.service` — arranca el servidor solo al encender la maquina y lo
+  para guardando el mundo al apagarla.
+- `valhelsia-copia.timer` — copia de seguridad del mundo cada dia a las 05:00,
+  conservando las 7 ultimas.
+
+Luego te queda aceptar el EULA en `.env` y arrancar:
+
+```bash
+sudo systemctl start valhelsia
+```
+
+**El fallo numero uno al montar esto en la nube:** ademas del cortafuegos del
+sistema operativo, tu proveedor tiene otro cortafuegos propio, cerrado por
+defecto, y hay que abrir ahi el puerto 25565/TCP. En Oracle Cloud esta en
+Networking > VCN > Subnet > Security List > Ingress Rules. En AWS es el
+Security Group; en Hetzner y Contabo, el cortafuegos del panel. Si el servidor
+arranca bien pero nadie puede entrar, empieza mirando ahi.
+
+Las copias tambien se pueden lanzar a mano en cualquier momento, y no hace
+falta parar el servidor:
+
+```bash
+./despliegue/copia-seguridad.sh
+```
 
 ---
 
@@ -569,6 +713,17 @@ el proceso deja fragmentos del mundo sin guardar.
 - Contenido del propio `Valhelsia-6-6.2.3-SERVER.zip`: su `README.txt`, su
   `ServerStart.sh` y el nombre del instalador de Forge que incluye
 - [Repositorio de configuracion de Valhelsia 6](https://github.com/ValhelsiaTeam/Valhelsia-6)
+- [GitHub Terms for Additional Products and Features](https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features),
+  seccion Actions: usos prohibidos y consecuencias del abuso
+- [Limites de GitHub Actions](https://docs.github.com/en/actions/reference/limits)
+  (maximo de 6 horas por job, no ampliable)
+- [Especificaciones de los runners de GitHub](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)
+  y [red de los runners](https://docs.github.com/en/actions/reference/runners/larger-runners#networking-for-larger-runners)
+- [Recursos Always Free de Oracle Cloud](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm),
+  incluida la reclamacion de instancias inactivas
+- [Centro de ayuda de Aternos](https://support.aternos.org/), limites de
+  almacenamiento y de subida de archivos
+- [Agente de playit.gg](https://github.com/playit-cloud/playit-agent)
 - [Documentacion de la imagen itzg/minecraft-server](https://docker-minecraft-server.readthedocs.io/),
   apartados de [modpacks de CurseForge](https://docker-minecraft-server.readthedocs.io/en/latest/types-and-platforms/mod-platforms/auto-curseforge/),
   [opciones de la maquina virtual de Java](https://docker-minecraft-server.readthedocs.io/en/latest/configuration/jvm-options/)
