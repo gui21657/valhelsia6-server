@@ -1,0 +1,13 @@
+# Los scripts de shell necesitan finales de linea LF aunque se clonen en Windows.
+*.sh text eol=lf
+
+# Los scripts por lotes de Windows necesitan CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# El resto, normalizado.
+*.md text
+*.yml text eol=lf
+*.yaml text eol=lf
+.env.example text eol=lf
+.gitignore text eol=lf

@@ -1,0 +1,77 @@
+name: Validar configuracion y scripts
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  compose:
+    name: Sintaxis de docker-compose.yml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Comprobar que el YAML es valido
+        run: python3 -c "import yaml,sys; yaml.safe_load(open('docker-compose.yml')); print('YAML valido')"
+
+      - name: Resolver el compose con los valores de .env.example
+        run: |
+          cp .env.example .env
+          docker compose config
+
+      - name: El compose no debe traer el EULA pre-aceptado
+        run: |
+          cp .env.example .env
+          if docker compose config | grep -iE 'EULA:[[:space:]]*"?(TRUE|true)"?'; then
+            echo "ERROR: el EULA no puede venir aceptado de fabrica." >&2
+            exit 1
+          fi
+          echo "Correcto: el EULA queda en FALSE hasta que el usuario lo cambie."
+
+  scripts:
+    name: Sintaxis de los scripts de arranque
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Comprobar la sintaxis de iniciar.sh
+        run: bash -n iniciar.sh
+
+      - name: Analizar iniciar.sh con shellcheck
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck
+          shellcheck --severity=warning iniciar.sh
+
+      - name: Comprobar que iniciar.bat existe y no esta vacio
+        run: test -s iniciar.bat
+
+  licencia:
+    name: Sin archivos con copyright
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: No puede haber jars ni zips en el repositorio
+        run: |
+          encontrados=$(git ls-files '*.jar' '*.zip' '*.mrpack')
+          if [ -n "$encontrados" ]; then
+            echo "ERROR: hay archivos que no se pueden redistribuir:" >&2
+            echo "$encontrados" >&2
+            exit 1
+          fi
+          echo "Correcto: no hay mods, modpacks ni jars en el repositorio."
+
+      - name: No puede haber un .env real ni claves de CurseForge
+        run: |
+          if git ls-files --error-unmatch .env >/dev/null 2>&1; then
+            echo "ERROR: el archivo .env no debe estar versionado." >&2
+            exit 1
+          fi
+          if grep -rIn --exclude-dir=.git -E '\$2a\$10\$[A-Za-z0-9./]{20,}' .; then
+            echo "ERROR: posible clave de API de CurseForge en el repositorio." >&2
+            exit 1
+          fi
+          echo "Correcto: sin .env versionado ni claves incrustadas."

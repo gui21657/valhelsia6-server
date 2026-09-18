@@ -1,0 +1,67 @@
+# ---------------------------------------------------------------------------
+# Configuracion local
+# ---------------------------------------------------------------------------
+.env
+*.local
+
+# ---------------------------------------------------------------------------
+# Contenido con copyright: NADA de esto se sube nunca.
+# El modpack, los mods, Forge y los jars de Minecraft se descargan en tiempo
+# de ejecucion desde las fuentes oficiales. No se redistribuyen aqui.
+# ---------------------------------------------------------------------------
+servidor/
+datos/
+descargas/
+mods/
+libraries/
+versions/
+*.jar
+*.zip
+*.jar.log
+
+# ---------------------------------------------------------------------------
+# Mundo y estado del servidor
+# ---------------------------------------------------------------------------
+world/
+world_nether/
+world_the_end/
+*/world/
+*/world_nether/
+*/world_the_end/
+eula.txt
+server.properties
+ops.json
+whitelist.json
+banned-ips.json
+banned-players.json
+usercache.json
+usernamecache.json
+session.lock
+
+# ---------------------------------------------------------------------------
+# Copias de seguridad
+# ---------------------------------------------------------------------------
+backups/
+copias/
+*.tar.gz
+*.tgz
+
+# ---------------------------------------------------------------------------
+# Registros y volcados
+# ---------------------------------------------------------------------------
+logs/
+crash-reports/
+*.log
+*.log.gz
+hs_err_pid*.log
+replay_pid*.log
+
+# ---------------------------------------------------------------------------
+# Sistema operativo y editores
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp

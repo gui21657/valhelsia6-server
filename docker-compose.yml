@@ -1,0 +1,68 @@
+services:
+  valhelsia:
+    # Java 17 explicito: Forge 47.x (Minecraft 1.20.1) es la combinacion soportada
+    # por el pack. La etiqueta "latest" de esta imagen apunta a un Java mucho mas
+    # nuevo y varios mods de Valhelsia 6 no arrancan ahi.
+    image: itzg/minecraft-server:java17
+    container_name: valhelsia6
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
+
+    ports:
+      - "${PUERTO:-25565}:25565"
+
+    environment:
+      # ---- EULA -------------------------------------------------------------
+      # Debe valer TRUE para que el servidor arranque. NO viene aceptado.
+      # Se acepta editando EULA en tu archivo .env, no aqui.
+      EULA: "${EULA:-FALSE}"
+
+      # ---- Instalacion automatica del modpack --------------------------------
+      # La imagen descarga el modpack desde CurseForge en tiempo de ejecucion.
+      # Este repositorio no contiene ni redistribuye mods ni jars.
+      TYPE: "AUTO_CURSEFORGE"
+      CF_SLUG: "valhelsia-6"
+      # Fija la version del pack. Vaciar CF_FILENAME_MATCHER para usar la ultima.
+      CF_FILENAME_MATCHER: "${VERSION_PACK:-6.2.3}"
+      # Opcional. La imagen trae una clave propia para Java 17 y superiores;
+      # define CF_API_KEY en .env solo si la descarga falla por limite de uso.
+      CF_API_KEY: "${CF_API_KEY:-}"
+
+      # ---- Memoria ----------------------------------------------------------
+      # Valhelsia 6 es un pack grande. Ver la tabla del README antes de bajar
+      # este valor. El arranque con poca RAM falla de formas poco obvias.
+      INIT_MEMORY: "${RAM_INICIAL:-4G}"
+      MAX_MEMORY: "${RAM_MAXIMA:-8G}"
+
+      # ---- Ajustes del servidor ---------------------------------------------
+      DIFFICULTY: "${DIFICULTAD:-normal}"
+      MOTD: "${MOTD:-Servidor Valhelsia 6}"
+      MAX_PLAYERS: "${MAX_JUGADORES:-10}"
+      VIEW_DISTANCE: "${DISTANCIA_VISION:-8}"
+      SIMULATION_DISTANCE: "${DISTANCIA_SIMULACION:-6}"
+      LEVEL: "${NOMBRE_MUNDO:-world}"
+      ONLINE_MODE: "${MODO_ONLINE:-true}"
+      OPS: "${OPERADORES:-}"
+      TZ: "${ZONA_HORARIA:-America/Guatemala}"
+
+      # Reintentos generosos: la primera descarga del pack es de varios cientos
+      # de megabytes y puede tardar bastante segun la conexion.
+      SETUP_ONLY: "false"
+      ENABLE_ROLLING_LOGS: "true"
+
+    volumes:
+      # Mundo, mods descargados y configuracion. Persisten entre reinicios.
+      - ./datos:/data
+      # Opcional: coloca aqui un zip del server pack bajado a mano si tu red
+      # bloquea CurseForge. La imagen lo detecta sin volver a descargarlo.
+      - ./descargas:/downloads
+
+    healthcheck:
+      test: ["CMD", "mc-health"]
+      # start_period largo a proposito: la primera arrancada instala Forge y
+      # cientos de mods, y puede pasar de 10 minutos en un disco lento.
+      start_period: 15m
+      interval: 30s
+      timeout: 20s
+      retries: 10
