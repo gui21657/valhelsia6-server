@@ -20,14 +20,15 @@ Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=/opt/valhelsia6-server
 
-# El perfil "tunel" levanta tambien el agente de playit.gg. Si no lo usas,
-# quita --profile tunel de las dos lineas de abajo.
-ExecStart=/usr/bin/docker compose --profile tunel up -d
+# El perfil "tunel" levanta tambien el agente de playit.gg. Por defecto NO
+# sube: un VPS ya tiene IP publica y no lo necesita. Si lo quieres, anade
+# --profile tunel a las dos lineas de abajo.
+ExecStart=/usr/bin/docker compose up -d
 
 # 'stop' y no 'down': para el contenedor guardando el mundo y lo deja listo
 # para el siguiente arranque. Docker envia SIGTERM, que la imagen traduce a un
 # 'stop' de la consola del servidor.
-ExecStop=/usr/bin/docker compose --profile tunel stop
+ExecStop=/usr/bin/docker compose stop
 
 # La primera arrancada instala Forge y ~250 mods. Puede pasar de media hora.
 TimeoutStartSec=0
