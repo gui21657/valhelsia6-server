@@ -318,14 +318,19 @@ menudo: reconfirmalos antes de pagar.**
 
 Dos avisos concretos, porque son los que mas tiempo hacen perder:
 
-- **Aternos no vale para Valhelsia 6.** Segun su propio centro de ayuda,
-  limita cada servidor gratuito a
+- **Aternos no vale para Valhelsia 6**, y el motivo es la capacidad, no las
+  ganas. Segun su centro de ayuda, cada servidor gratuito tiene un techo de
   [4 GB de almacenamiento](https://support.aternos.org/hc/en-us/articles/360035144691-Maximum-allowed-server-size)
-  y
-  [no da acceso FTP ni permite subir mods o modpacks propios](https://support.aternos.org/hc/en-us/articles/360027235831-Uploading-files-and-FTP-access).
-  Un pack de ~250 mods con su mundo ni cabe ni se puede instalar. Si alguien te
-  lo recomienda para este pack, no lo ha probado. Comprobalo tu mismo antes de
-  invertir tiempo: sus paginas cambian.
+  y la RAM no se elige: se asigna sola, y solo se amplia con
+  [«boosts» de 500 MB apilables hasta cinco](https://support.aternos.org/hc/en-us/articles/31371671484061-Boost-your-server-ram),
+  o sea +2,5 GB como mucho. Ese techo se queda muy por debajo de los 6-8 GB que
+  pide este pack, asi que da igual como consigas meter los mods: no arranca
+  bien. Si alguien te recomienda Aternos para Valhelsia 6, no lo ha probado.
+
+  Un aviso de honestidad sobre este punto: no pude abrir las paginas de Aternos
+  desde aqui para leerlas yo mismo, asi que esto sale de lo que sus articulos
+  dicen segun los buscadores. Si te lo estas planteando en serio, comprueba las
+  cifras en su web antes de invertir una tarde.
 - **Oracle Always Free se recorto a la mitad.** Desde el 15 de junio de 2026 el
   cupo de Ampere A1 es de **2 OCPU y 12 GB de RAM**, no los 4 OCPU y 24 GB que
   siguen repitiendo casi todas las guias de internet. 12 GB todavia dan para
