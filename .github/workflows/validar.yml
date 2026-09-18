@@ -18,12 +18,14 @@ jobs:
 
       - name: Resolver el compose con los valores de .env.example
         run: |
-          cp ejemplo-valhelsia/.env.example ejemplo-valhelsia/.env
+          cd ejemplo-valhelsia
+          cp .env.example .env
           docker compose config
 
       - name: El compose no debe traer el EULA pre-aceptado
         run: |
-          cp ejemplo-valhelsia/.env.example ejemplo-valhelsia/.env
+          cd ejemplo-valhelsia
+          cp .env.example .env
           if docker compose config | grep -iE 'EULA:[[:space:]]*"?(TRUE|true)"?'; then
             echo "ERROR: el EULA no puede venir aceptado de fabrica." >&2
             exit 1
@@ -62,8 +64,8 @@ jobs:
 
       - name: Comprobar que los scripts de Windows existen y no estan vacios
         run: |
-          test -s iniciar.bat
-          test -s direccion.bat
+          test -s ejemplo-valhelsia/iniciar.bat
+          test -s ejemplo-valhelsia/direccion.bat
 
   licencia:
     name: Sin archivos con copyright
